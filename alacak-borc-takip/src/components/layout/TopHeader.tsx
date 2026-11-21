@@ -1,8 +1,9 @@
-import { Moon, Plus, Search, Sun, Wallet } from "lucide-react";
+import { Moon, Plus, Search, Settings, Sun, Wallet } from "lucide-react";
 import type { Currency } from "@/types";
 import { useLedger } from "@/store/LedgerProvider";
 import { Button } from "@/components/ui/Button";
 import { Segmented } from "@/components/ui/Segmented";
+import { CloudStatusChip } from "@/components/backup/CloudStatusChip";
 import { cn } from "@/lib/utils";
 import { VIEW_TITLES, type View } from "@/components/layout/nav";
 
@@ -11,6 +12,7 @@ interface TopHeaderProps {
   search: string;
   onSearchChange: (value: string) => void;
   onNewTransaction: () => void;
+  onOpenSettings: () => void;
 }
 
 const CURRENCY_OPTIONS: { value: Currency; label: string }[] = [
@@ -19,17 +21,37 @@ const CURRENCY_OPTIONS: { value: Currency; label: string }[] = [
   { value: "EUR", label: "€" },
 ];
 
-function ThemeToggle() {
-  const { theme, toggleTheme } = useLedger();
+function IconButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <button
       type="button"
-      onClick={toggleTheme}
-      aria-label={theme === "dark" ? "Açık temaya geç" : "Koyu temaya geç"}
+      onClick={onClick}
+      aria-label={label}
+      title={label}
       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-surface text-muted transition-all duration-200 hover:text-ink active:scale-95"
     >
-      {theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+      {children}
     </button>
+  );
+}
+
+function ThemeToggle() {
+  const { theme, toggleTheme } = useLedger();
+  return (
+    <IconButton
+      label={theme === "dark" ? "Açık temaya geç" : "Koyu temaya geç"}
+      onClick={toggleTheme}
+    >
+      {theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+    </IconButton>
   );
 }
 
@@ -56,11 +78,17 @@ function SearchInput({
   );
 }
 
-export function TopHeader({ view, search, onSearchChange, onNewTransaction }: TopHeaderProps) {
+export function TopHeader({
+  view,
+  search,
+  onSearchChange,
+  onNewTransaction,
+  onOpenSettings,
+}: TopHeaderProps) {
   const { displayCurrency, setDisplayCurrency } = useLedger();
 
   return (
-    <header className="no-print sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur-xl">
+    <header className="no-print sticky top-0 z-30 border-b border-line bg-bg/70 backdrop-blur-xl">
       {/* Mobil üst satır */}
       <div className="flex items-center gap-3 px-4 pt-3 lg:hidden">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand text-white shadow-sm">
@@ -80,24 +108,34 @@ export function TopHeader({ view, search, onSearchChange, onNewTransaction }: To
         />
         <ThemeToggle />
       </div>
-      <div className="px-4 pb-3 pt-2.5 lg:hidden">
-        <SearchInput value={search} onChange={onSearchChange} />
+      {/* Mobil arama satırı */}
+      <div className="flex items-center gap-2.5 px-4 pb-3 pt-2.5 lg:hidden">
+        <SearchInput value={search} onChange={onSearchChange} className="flex-1" />
+        <CloudStatusChip iconOnly onClick={onOpenSettings} />
+        <IconButton label="Ayarlar" onClick={onOpenSettings}>
+          <Settings className="h-[18px] w-[18px]" />
+        </IconButton>
       </div>
 
       {/* Masaüstü satır */}
-      <div className="hidden h-[68px] items-center gap-4 px-6 lg:flex">
+      <div className="hidden h-[68px] items-center gap-3 px-6 lg:flex">
         <div className="min-w-0">
           <h1 className="truncate text-lg font-extrabold text-ink">{VIEW_TITLES[view]}</h1>
           <p className="truncate text-xs text-muted">Alacak ve borç hareketlerinizin genel görünümü</p>
         </div>
-        <div className="ml-auto flex items-center gap-3">
-          <SearchInput value={search} onChange={onSearchChange} className="w-[300px]" />
+        <div className="ml-auto flex items-center gap-2.5">
+          <SearchInput value={search} onChange={onSearchChange} className="w-[240px] xl:w-[300px]" />
           <Segmented
             options={CURRENCY_OPTIONS}
             value={displayCurrency}
             onChange={(c) => setDisplayCurrency(c)}
           />
+          <CloudStatusChip className="hidden xl:inline-flex" onClick={onOpenSettings} />
+          <CloudStatusChip iconOnly className="xl:hidden" onClick={onOpenSettings} />
           <ThemeToggle />
+          <IconButton label="Ayarlar" onClick={onOpenSettings}>
+            <Settings className="h-[18px] w-[18px]" />
+          </IconButton>
           <Button variant="primary" leftIcon={<Plus className="h-4 w-4" />} onClick={onNewTransaction}>
             Yeni İşlem
           </Button>

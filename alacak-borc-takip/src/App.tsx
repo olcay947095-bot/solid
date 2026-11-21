@@ -17,10 +17,12 @@ import { TransactionForm } from "@/components/ledger/TransactionForm";
 import { TransactionDetailSheet } from "@/components/ledger/TransactionDetailSheet";
 import { PartialPaymentSheet } from "@/components/ledger/PartialPaymentSheet";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { SettingsSheet } from "@/components/settings/SettingsSheet";
+import { AnimatedBackground } from "@/components/effects/AnimatedBackground";
 import type { RowActionsProps } from "@/components/ledger/TransactionTable";
 
 export function App() {
-  const { displayCurrency, deleteTransaction } = useLedger();
+  const { displayCurrency, deleteTransaction, settings, theme } = useLedger();
   const toast = useToast();
 
   const [view, setView] = useState<View>("dashboard");
@@ -28,6 +30,7 @@ export function App() {
   const [presetStatus, setPresetStatus] = useState<TxStatus | "all">("all");
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Sayfa durumları
   const [formOpen, setFormOpen] = useState(false);
@@ -118,45 +121,61 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-bg">
-      <Sidebar
-        collapsed={collapsed}
-        onToggle={() => setCollapsed((c) => !c)}
-        view={view}
-        ledgerType={ledgerType}
-        onNavigate={navigate}
+    <div className="relative min-h-screen">
+      <AnimatedBackground
+        variant={settings.wallpaper}
+        animated={settings.wallpaperAnimated}
+        intensity={settings.wallpaperIntensity}
+        dark={theme === "dark"}
+        accent={settings.accent}
       />
 
-      <div className={cn("transition-[padding] duration-300", collapsed ? "lg:pl-[76px]" : "lg:pl-[264px]")}>
-        <TopHeader view={view} search={search} onSearchChange={handleSearch} onNewTransaction={openNew} />
+      <div className="relative z-10">
+        <Sidebar
+          collapsed={collapsed}
+          onToggle={() => setCollapsed((c) => !c)}
+          view={view}
+          ledgerType={ledgerType}
+          onNavigate={navigate}
+        />
 
-        <main className="mx-auto w-full max-w-[1440px] px-4 pb-28 pt-5 lg:px-6 lg:pb-12">
-          <div key={view} className="animate-fade-in">
-            {view === "dashboard" ? (
-              <DashboardView
-                onSelect={setDetail}
-                onSeeAllDues={() => navigate("ledger", "all")}
-                onShowOverdue={showOverdue}
-              />
-            ) : view === "ledger" ? (
-              <LedgerView
-                type={ledgerType}
-                onTypeChange={setLedgerType}
-                search={search}
-                actions={actions}
-                onNew={openNew}
-                presetStatus={presetStatus}
-              />
-            ) : view === "contacts" ? (
-              <ContactsView search={search} onOpenTransaction={setDetail} onNew={openNew} />
-            ) : (
-              <ReportsView />
-            )}
-          </div>
-        </main>
+        <div className={cn("transition-[padding] duration-300", collapsed ? "lg:pl-[76px]" : "lg:pl-[264px]")}>
+          <TopHeader
+            view={view}
+            search={search}
+            onSearchChange={handleSearch}
+            onNewTransaction={openNew}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+
+          <main className="mx-auto w-full max-w-[1440px] px-4 pb-28 pt-5 lg:px-6 lg:pb-12">
+            <div key={view} className="animate-fade-in">
+              {view === "dashboard" ? (
+                <DashboardView
+                  onSelect={setDetail}
+                  onSeeAllDues={() => navigate("ledger", "all")}
+                  onShowOverdue={showOverdue}
+                />
+              ) : view === "ledger" ? (
+                <LedgerView
+                  type={ledgerType}
+                  onTypeChange={setLedgerType}
+                  search={search}
+                  actions={actions}
+                  onNew={openNew}
+                  presetStatus={presetStatus}
+                />
+              ) : view === "contacts" ? (
+                <ContactsView search={search} onOpenTransaction={setDetail} onNew={openNew} />
+              ) : (
+                <ReportsView />
+              )}
+            </div>
+          </main>
+        </div>
+
+        <BottomNav view={view} ledgerType={ledgerType} onNavigate={navigate} onQuickAdd={openNew} />
       </div>
-
-      <BottomNav view={view} ledgerType={ledgerType} onNavigate={navigate} onQuickAdd={openNew} />
 
       {/* Sayfa katmanları */}
       <TransactionForm open={formOpen} editing={editing} onClose={() => setFormOpen(false)} />
@@ -169,6 +188,7 @@ export function App() {
         onDelete={setPendingDelete}
       />
       <PartialPaymentSheet tx={partial} onClose={() => setPartial(null)} />
+      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       <ConfirmDialog
         open={!!pendingDelete}

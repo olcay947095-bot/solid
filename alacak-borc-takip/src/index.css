@@ -15,6 +15,17 @@
   --c-ink: 15 23 42; /* #0F172A */
   --c-muted: 100 116 139; /* #64748B */
   --c-faint: 148 163 184; /* #94A3B8 */
+
+  /* Marka (aksan) — varsayılan Royal Indigo */
+  --c-brand: 79 70 229;
+  --c-brand-50: 238 242 255;
+  --c-brand-100: 224 231 255;
+  --c-brand-500: 99 102 241;
+  --c-brand-600: 79 70 229;
+  --c-brand-700: 67 56 202;
+
+  /* Duvar kağıdı yoğunluğu (0-1) */
+  --wp-opacity: 0.55;
   color-scheme: light;
 }
 
@@ -28,6 +39,42 @@
   --c-muted: 148 163 184; /* #94A3B8 */
   --c-faint: 100 116 139; /* #64748B */
   color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------ *
+ *  Premium aksan temaları — document.documentElement üzerine uygulanır.
+ * ------------------------------------------------------------------ */
+.accent-indigo {
+  --c-brand: 79 70 229;
+  --c-brand-50: 238 242 255;
+  --c-brand-100: 224 231 255;
+  --c-brand-500: 99 102 241;
+  --c-brand-600: 79 70 229;
+  --c-brand-700: 67 56 202;
+}
+.accent-emerald {
+  --c-brand: 16 185 129;
+  --c-brand-50: 236 253 245;
+  --c-brand-100: 209 250 229;
+  --c-brand-500: 16 185 129;
+  --c-brand-600: 5 150 105;
+  --c-brand-700: 4 120 87;
+}
+.accent-gold {
+  --c-brand: 201 162 39;
+  --c-brand-50: 253 250 235;
+  --c-brand-100: 250 243 214;
+  --c-brand-500: 217 180 65;
+  --c-brand-600: 201 162 39;
+  --c-brand-700: 166 132 26;
+}
+.accent-cyan {
+  --c-brand: 14 165 233;
+  --c-brand-50: 240 249 255;
+  --c-brand-100: 224 242 254;
+  --c-brand-500: 56 189 248;
+  --c-brand-600: 14 165 233;
+  --c-brand-700: 3 105 161;
 }
 
 @layer base {
@@ -44,7 +91,7 @@
     overscroll-behavior-y: none;
   }
   :focus-visible {
-    outline: 2px solid #4f46e5;
+    outline: 2px solid rgb(var(--c-brand));
     outline-offset: 2px;
   }
   input,
@@ -95,6 +142,73 @@
     );
     animation: shimmer 1.4s infinite;
   }
+
+  /* ---------- Premium (elite) yüzeyler ---------- */
+
+  /* Cam yüzey — header / nav / kartlar için şeffaf blur */
+  .glass {
+    background: rgb(var(--c-surface) / 0.7);
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+  }
+
+  /* Elite kart — gradyan saç teli kenarlık + hafif iç parlaklık */
+  .card-premium {
+    position: relative;
+    @apply rounded-2xl border border-line bg-surface shadow-card;
+  }
+  .card-premium::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgb(var(--c-brand) / 0.55),
+      rgb(var(--c-brand) / 0.06) 42%,
+      transparent 60%,
+      rgb(201 162 39 / 0.35)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Marka gradyan metin */
+  .text-gradient {
+    background: linear-gradient(120deg, rgb(var(--c-brand-500)), rgb(var(--c-brand-700)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(120deg, #e8c766, #c9a227 55%, #a6841a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Köşeden geçen ışık parıltısı (sheen) */
+  .sheen {
+    position: relative;
+    overflow: hidden;
+  }
+  .sheen::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 38%;
+    transform: translateX(-120%);
+    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.28), transparent);
+    animation: sheen 3.4s ease-in-out infinite;
+    pointer-events: none;
+  }
 }
 
 /* İnce, modern kaydırma çubuğu */
@@ -119,5 +233,16 @@
 @media print {
   .no-print {
     display: none !important;
+  }
+}
+
+/* Hareket azaltma tercihinde animasyonları durdur */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }

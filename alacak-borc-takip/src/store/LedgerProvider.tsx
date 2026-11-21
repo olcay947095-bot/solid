@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type {
   Currency,
   LedgerRow,
+  Settings,
   Transaction,
   TransactionDraft,
 } from "@/types";
@@ -11,6 +12,7 @@ import { createSampleTransactions, makeInstallments } from "@/lib/sampleData";
 import { buildRows, remainingAmount } from "@/lib/ledger";
 import { todayISO } from "@/lib/format";
 import { uid } from "@/lib/utils";
+import { ACCENT_OPTIONS } from "@/lib/constants";
 
 interface LedgerContextValue {
   /** İlk yükleme iskelet durumu. */
@@ -18,16 +20,22 @@ interface LedgerContextValue {
   transactions: Transaction[];
   /** Gösterim para birimine çevrilmiş, türetilmiş satırlar. */
   rows: LedgerRow[];
+  /** Tüm ayarlar (tema, aksan, duvar kağıdı, yedekleme). */
+  settings: Settings;
   displayCurrency: Currency;
   setDisplayCurrency: (c: Currency) => void;
   theme: "light" | "dark";
   setTheme: (t: "light" | "dark") => void;
   toggleTheme: () => void;
+  /** Ayarları kısmi olarak günceller. */
+  updateSettings: (patch: Partial<Settings>) => void;
   addTransaction: (draft: TransactionDraft) => Transaction;
   updateTransaction: (id: string, draft: TransactionDraft) => void;
   deleteTransaction: (id: string) => void;
   addPayment: (id: string, amount: number, date?: string, note?: string) => void;
   removePayment: (id: string, paymentId: string) => void;
+  /** Yedekten gelen kayıtları (isteğe bağlı ayarlarla) yükler. */
+  importData: (transactions: Transaction[], settingsPatch?: Partial<Settings>) => void;
   resetDemoData: () => void;
   clearAll: () => void;
 }
@@ -90,8 +98,17 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement;
     root.classList.toggle("dark", settings.theme === "dark");
     root.style.colorScheme = settings.theme;
+
+    // Premium aksan paleti
+    for (const opt of ACCENT_OPTIONS) root.classList.remove(`accent-${opt.value}`);
+    root.classList.add(`accent-${settings.accent}`);
+
+    // Duvar kağıdı yoğunluğu CSS değişkeni
+    root.style.setProperty("--wp-opacity", String(settings.wallpaperIntensity / 100));
+
     try {
       localStorage.setItem("abt.theme", settings.theme);
+      localStorage.setItem("abt.accent", settings.accent);
     } catch {
       /* yoksay */
     }
@@ -112,6 +129,10 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
 
   const toggleTheme = useCallback(() => {
     setSettings((s) => ({ ...s, theme: s.theme === "dark" ? "light" : "dark" }));
+  }, []);
+
+  const updateSettings = useCallback((patch: Partial<Settings>) => {
+    setSettings((s) => ({ ...s, ...patch }));
   }, []);
 
   const addTransaction = useCallback((draft: TransactionDraft) => {
@@ -184,6 +205,11 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const importData = useCallback((txs: Transaction[], settingsPatch?: Partial<Settings>) => {
+    setTransactions(txs);
+    if (settingsPatch) setSettings((s) => ({ ...s, ...settingsPatch }));
+  }, []);
+
   const resetDemoData = useCallback(() => {
     setTransactions(createSampleTransactions());
   }, []);
@@ -197,16 +223,19 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
       loading,
       transactions,
       rows,
+      settings,
       displayCurrency: settings.displayCurrency,
       setDisplayCurrency,
       theme: settings.theme,
       setTheme,
       toggleTheme,
+      updateSettings,
       addTransaction,
       updateTransaction,
       deleteTransaction,
       addPayment,
       removePayment,
+      importData,
       resetDemoData,
       clearAll,
     }),
@@ -214,16 +243,17 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
       loading,
       transactions,
       rows,
-      settings.displayCurrency,
-      settings.theme,
+      settings,
       setDisplayCurrency,
       setTheme,
       toggleTheme,
+      updateSettings,
       addTransaction,
       updateTransaction,
       deleteTransaction,
       addPayment,
       removePayment,
+      importData,
       resetDemoData,
       clearAll,
     ],

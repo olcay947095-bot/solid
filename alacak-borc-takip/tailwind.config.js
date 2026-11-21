@@ -17,12 +17,20 @@ export default {
 
         /* Fixed financial palette */
         brand: {
-          DEFAULT: "#4F46E5",
-          50: "#EEF2FF",
-          100: "#E0E7FF",
-          500: "#6366F1",
-          600: "#4F46E5",
-          700: "#4338CA",
+          DEFAULT: "rgb(var(--c-brand) / <alpha-value>)",
+          50: "rgb(var(--c-brand-50) / <alpha-value>)",
+          100: "rgb(var(--c-brand-100) / <alpha-value>)",
+          500: "rgb(var(--c-brand-500) / <alpha-value>)",
+          600: "rgb(var(--c-brand-600) / <alpha-value>)",
+          700: "rgb(var(--c-brand-700) / <alpha-value>)",
+        },
+        /* Elite gold — premium vurgular (aksandan bağımsız sabit) */
+        gold: {
+          DEFAULT: "#C9A227",
+          light: "#E8C766",
+          dark: "#A6841A",
+          soft: "#FBF6E4",
+          softdark: "#33290a",
         },
         receivable: {
           DEFAULT: "#10B981",
@@ -77,6 +85,19 @@ export default {
         shimmer: {
           "100%": { transform: "translateX(100%)" },
         },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
+        "pulse-ring": {
+          "0%": { transform: "scale(0.9)", opacity: "0.7" },
+          "70%": { transform: "scale(1.6)", opacity: "0" },
+          "100%": { transform: "scale(1.6)", opacity: "0" },
+        },
+        sheen: {
+          "0%": { transform: "translateX(-120%)" },
+          "100%": { transform: "translateX(220%)" },
+        },
       },
       animation: {
         "fade-in": "fade-in 0.2s ease-out",
@@ -84,6 +105,9 @@ export default {
         "sheet-up": "sheet-up 0.32s cubic-bezier(0.16,1,0.3,1)",
         "slide-in-right": "slide-in-right 0.32s cubic-bezier(0.16,1,0.3,1)",
         "scale-in": "scale-in 0.18s cubic-bezier(0.16,1,0.3,1)",
+        float: "float 6s ease-in-out infinite",
+        "pulse-ring": "pulse-ring 2.4s cubic-bezier(0.16,1,0.3,1) infinite",
+        sheen: "sheen 3.4s ease-in-out infinite",
       },
     },
   },

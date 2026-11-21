@@ -49,7 +49,7 @@ function KpiCard({
 }) {
   const t = TONES[tone];
   return (
-    <div className="card group relative min-w-[262px] snap-start overflow-hidden p-5 sm:min-w-0">
+    <div className="card group relative h-full overflow-hidden p-5">
       <div
         className={cn(
           "pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-gradient-to-br to-transparent blur-xl transition-opacity duration-300 group-hover:opacity-100",
@@ -77,18 +77,16 @@ export function KpiCards({ onShowOverdue }: { onShowOverdue: () => void }) {
 
   if (loading) {
     return (
-      <div className="flex snap-x gap-4 overflow-x-auto pb-1 no-scrollbar sm:grid sm:grid-cols-2 sm:overflow-visible xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="min-w-[262px] snap-start sm:min-w-0">
-            <KpiSkeleton />
-          </div>
+          <KpiSkeleton key={i} />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto pb-1 no-scrollbar sm:grid sm:grid-cols-2 sm:overflow-visible xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
       <KpiCard
         label="Net Bakiye"
         value={formatCurrency(kpis.net, displayCurrency)}
@@ -114,7 +112,7 @@ export function KpiCards({ onShowOverdue }: { onShowOverdue: () => void }) {
         icon={<ArrowUpRight className="h-5 w-5" />}
         footer={<span>{kpis.payableCount} açık işlem</span>}
       />
-      <button type="button" onClick={onShowOverdue} className="min-w-[262px] snap-start text-left sm:min-w-0">
+      <button type="button" onClick={onShowOverdue} className="h-full w-full text-left">
         <KpiCard
           label="Gecikmiş Ödemeler"
           value={formatCurrency(kpis.overdue, displayCurrency)}

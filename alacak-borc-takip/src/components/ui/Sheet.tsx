@@ -48,7 +48,7 @@ export function Sheet({ open, onClose, title, description, children, footer, siz
         className={cn(
           "absolute flex flex-col border-line bg-surface shadow-pop",
           isMobile
-            ? "inset-x-0 bottom-0 max-h-[92vh] animate-sheet-up rounded-t-3xl border-t"
+            ? "inset-x-0 bottom-0 max-h-[92vh] max-h-[92dvh] animate-sheet-up rounded-t-3xl border-t"
             : cn(
                 "right-0 top-0 h-full animate-slide-in-right border-l",
                 size === "lg" ? "w-[560px]" : "w-[480px]",
@@ -59,7 +59,7 @@ export function Sheet({ open, onClose, title, description, children, footer, siz
           <div className="mx-auto mt-2.5 h-1.5 w-11 shrink-0 rounded-full bg-surface-3" />
         ) : null}
 
-        <header className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-line px-5 py-4">
           <div className="min-w-0">
             <h2 className="text-base font-bold text-ink">{title}</h2>
             {description ? <p className="mt-0.5 text-xs text-muted">{description}</p> : null}
@@ -74,10 +74,14 @@ export function Sheet({ open, onClose, title, description, children, footer, siz
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
+        {/* min-h-0: flex sütununda kaydırılabilir alanın küçülebilmesi için şart,
+            aksi hâlde uzun içerik paneli ekranın dışına taşırır. */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5">{children}</div>
 
         {footer ? (
-          <footer className="safe-bottom border-t border-line bg-surface px-5 py-4">{footer}</footer>
+          <footer className="safe-bottom shrink-0 border-t border-line bg-surface px-5 py-4">
+            {footer}
+          </footer>
         ) : null}
       </div>
     </div>,

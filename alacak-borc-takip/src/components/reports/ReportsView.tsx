@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { BarChart3, Download, FileSpreadsheet, FileText } from "lucide-react";
+import { BarChart3, Download, FileSpreadsheet, FileText, Printer } from "lucide-react";
 import type { TxType } from "@/types";
 import { useLedger } from "@/store/LedgerProvider";
 import { useToast } from "@/store/ToastProvider";
 import { monthlyCashFlow } from "@/lib/ledger";
 import { formatCompact, formatCurrency } from "@/lib/format";
 import { downloadCsv, downloadExcel } from "@/lib/csv";
+import { exportReportPdf, type ReportScope } from "@/lib/report";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select } from "@/components/ui/Field";
@@ -33,22 +34,39 @@ const TYPE_OPTIONS = [
   { value: "payable" as const, label: "Borçlar" },
 ];
 
+const SCOPE_OPTIONS: { value: ReportScope; label: string }[] = [
+  { value: "all", label: "Tümü" },
+  { value: "contact", label: "Cari" },
+];
+
 export function ReportsView() {
   const { rows, displayCurrency, loading } = useLedger();
   const toast = useToast();
   const [type, setType] = useState<"all" | TxType>("all");
+  const [scope, setScope] = useState<ReportScope>("all");
+  const [contact, setContact] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+
+  const contacts = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of rows) if (r.tx.contactName) set.add(r.tx.contactName);
+    return [...set].sort((a, b) => a.localeCompare(b, "tr"));
+  }, [rows]);
+
+  // Seçili cari boş ya da geçersizse ilk cariye düş.
+  const activeContact = contacts.includes(contact) ? contact : contacts[0] ?? "";
 
   const filtered = useMemo(
     () =>
       rows.filter((r) => {
         if (type !== "all" && r.tx.type !== type) return false;
+        if (scope === "contact" && r.tx.contactName !== activeContact) return false;
         if (from && r.tx.dueDate < from) return false;
         if (to && r.tx.dueDate > to) return false;
         return true;
       }),
-    [rows, type, from, to],
+    [rows, type, scope, activeContact, from, to],
   );
 
   const filteredTxs = useMemo(() => filtered.map((r) => r.tx), [filtered]);
@@ -96,6 +114,27 @@ export function ReportsView() {
     }
   };
 
+  const handlePdf = () => {
+    if (filtered.length === 0) {
+      toast.warning("Raporlanacak kayıt yok", "Lütfen filtreleri değiştirin.");
+      return;
+    }
+    const ok = exportReportPdf({
+      rows: filtered,
+      scope,
+      contact: activeContact,
+      from,
+      to,
+      typeLabel: TYPE_OPTIONS.find((o) => o.value === type)?.label ?? "Tümü",
+      displayCurrency,
+    });
+    if (ok) {
+      toast.success("Rapor hazırlandı", "Açılan pencereden “PDF olarak kaydet” seçebilirsiniz.");
+    } else {
+      toast.error("Pencere açılamadı", "Tarayıcınız açılır pencereyi engellemiş olabilir.");
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* Filtre + Dışa aktarma */}
@@ -106,6 +145,22 @@ export function ReportsView() {
               <p className="mb-1.5 text-[13px] font-semibold text-ink">Tür</p>
               <Segmented options={TYPE_OPTIONS} value={type} onChange={setType} size="sm" />
             </div>
+            <div>
+              <p className="mb-1.5 text-[13px] font-semibold text-ink">Rapor Kapsamı</p>
+              <Segmented options={SCOPE_OPTIONS} value={scope} onChange={setScope} size="sm" />
+            </div>
+            {scope === "contact" ? (
+              <Field label="Cari" className="w-[190px]">
+                <Select value={activeContact} onChange={(e) => setContact(e.target.value)}>
+                  {contacts.length === 0 ? <option value="">Kayıtlı cari yok</option> : null}
+                  {contacts.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            ) : null}
             <Field label="Başlangıç" className="w-[150px]">
               <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
             </Field>
@@ -127,12 +182,19 @@ export function ReportsView() {
               CSV İndir
             </Button>
             <Button
-              variant="primary"
+              variant="secondary"
               leftIcon={<FileSpreadsheet className="h-4 w-4" />}
-              rightIcon={<Download className="h-4 w-4 opacity-70" />}
               onClick={() => handleExport("excel")}
             >
               Excel İndir
+            </Button>
+            <Button
+              variant="primary"
+              leftIcon={<Printer className="h-4 w-4" />}
+              rightIcon={<Download className="h-4 w-4 opacity-70" />}
+              onClick={handlePdf}
+            >
+              PDF Rapor
             </Button>
           </div>
         </div>

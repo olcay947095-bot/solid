@@ -1,8 +1,9 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import {
   AlertTriangle,
   Cloud,
+  Coins,
   Copy,
   Database,
   Download,
@@ -65,6 +66,40 @@ function formatStamp(iso?: string): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${formatDate(iso.slice(0, 10))} · ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** Döviz kuru girişi — geçerli değerleri üst bileşene bildirir. */
+function RateInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const [text, setText] = useState(String(value));
+
+  useEffect(() => {
+    setText(String(value));
+  }, [value]);
+
+  return (
+    <Field label={label}>
+      <Input
+        value={text}
+        inputMode="decimal"
+        spellCheck={false}
+        onFocus={(e) => e.currentTarget.select()}
+        onChange={(e) => {
+          setText(e.target.value);
+          const parsed = Number(e.target.value.replace(/\s/g, "").replace(",", "."));
+          if (Number.isFinite(parsed) && parsed > 0) onChange(parsed);
+        }}
+        onBlur={() => setText(String(value))}
+      />
+    </Field>
+  );
 }
 
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -204,6 +239,29 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
                 </div>
               </div>
             </div>
+          </Section>
+
+          {/* Döviz kurları */}
+          <Section
+            icon={<Coins className="h-[18px] w-[18px]" />}
+            title="Döviz Kurları"
+            description="1 birim yabancı paranın TL karşılığı — tüm hesaplamalarda kullanılır"
+          >
+            <div className="grid grid-cols-2 gap-2.5">
+              <RateInput
+                label="USD → ₺"
+                value={settings.rates.USD}
+                onChange={(v) => updateSettings({ rates: { ...settings.rates, USD: v } })}
+              />
+              <RateInput
+                label="EUR → ₺"
+                value={settings.rates.EUR}
+                onChange={(v) => updateSettings({ rates: { ...settings.rates, EUR: v } })}
+              />
+            </div>
+            <p className="text-[11px] leading-relaxed text-faint">
+              Farklı para birimindeki kayıtlar seçtiğiniz gösterim birimine bu kurlarla çevrilir.
+            </p>
           </Section>
 
           {/* Duvar kağıdı */}
@@ -470,11 +528,23 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
       <ConfirmDialog
         open={dialog === "clear"}
         title="Tüm kayıtları sil"
-        message="Bütün işlem kayıtları kalıcı olarak silinecek. Bu işlem geri alınamaz. Devam edilsin mi?"
+        message="Bütün işlem kayıtları silinecek. Silindikten sonra açılan bildirimden kısa süre içinde geri alabilirsiniz. Devam edilsin mi?"
         confirmLabel="Tümünü Sil"
         onConfirm={() => {
+          const snapshot = transactions;
           clearAll();
-          toast.success("Tüm kayıtlar silindi");
+          toast.success(
+            "Tüm kayıtlar silindi",
+            `${snapshot.length} kayıt silindi.`,
+            {
+              label: "Geri Al",
+              onClick: () => {
+                importData(snapshot);
+                toast.info("Geri alındı", `${snapshot.length} kayıt geri yüklendi.`);
+              },
+            },
+            8000,
+          );
           setDialog(null);
         }}
         onCancel={() => setDialog(null)}

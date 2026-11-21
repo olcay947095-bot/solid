@@ -7,6 +7,9 @@ export type TxStatus = "paid" | "pending" | "overdue" | "partial";
 /** Desteklenen para birimleri. */
 export type Currency = "TRY" | "USD" | "EUR";
 
+/** Döviz kurları — 1 birim ilgili para biriminin TRY karşılığı (TRY her zaman 1). */
+export type Rates = Record<Currency, number>;
+
 /** Tema modu. */
 export type ThemeMode = "light" | "dark";
 
@@ -75,6 +78,15 @@ export interface LedgerRow {
   nextDueDate: string;
 }
 
+/** Kayıtlı cari (kişi/firma) bilgisi. */
+export interface Contact {
+  id: string;
+  name: string;
+  phone?: string;
+  note?: string;
+  createdAt: string;
+}
+
 /** Liste filtreleri. */
 export interface Filters {
   type: "all" | TxType;
@@ -106,6 +118,8 @@ export interface BackupSettings {
 export interface Settings {
   theme: ThemeMode;
   displayCurrency: Currency;
+  /** Kullanıcının düzenleyebildiği döviz kurları (1 birim = kaç TRY). */
+  rates: Rates;
   accent: AccentId;
   wallpaper: WallpaperId;
   wallpaperAnimated: boolean;
@@ -119,5 +133,6 @@ export interface BackupPayload {
   version: number;
   exportedAt: string;
   transactions: Transaction[];
+  contacts?: Contact[];
   settings: Settings;
 }

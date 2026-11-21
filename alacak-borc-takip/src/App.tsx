@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Transaction, TxStatus, TxType } from "@/types";
 import { useLedger } from "@/store/LedgerProvider";
 import { useToast } from "@/store/ToastProvider";
@@ -22,7 +22,8 @@ import { AnimatedBackground } from "@/components/effects/AnimatedBackground";
 import type { RowActionsProps } from "@/components/ledger/TransactionTable";
 
 export function App() {
-  const { displayCurrency, deleteTransaction, settings, theme } = useLedger();
+  const { displayCurrency, transactions, deleteTransaction, insertTransaction, settings, theme } =
+    useLedger();
   const toast = useToast();
 
   const [view, setView] = useState<View>("dashboard");
@@ -97,13 +98,110 @@ export function App() {
 
   const confirmDelete = useCallback(() => {
     if (!pendingDelete) return;
-    const name = pendingDelete.contactName;
-    deleteTransaction(pendingDelete.id);
-    toast.success("İşlem silindi", `${name} kaydı silindi.`);
+    const target = pendingDelete;
+    const index = transactions.findIndex((t) => t.id === target.id);
+    deleteTransaction(target.id);
+    toast.success(
+      "İşlem silindi",
+      `${target.contactName} kaydı silindi.`,
+      {
+        label: "Geri Al",
+        onClick: () => {
+          insertTransaction(target, index);
+          toast.info("Geri alındı", `${target.contactName} kaydı geri yüklendi.`);
+        },
+      },
+      7000,
+    );
     setPendingDelete(null);
     setDetail(null);
     setPartial(null);
-  }, [pendingDelete, deleteTransaction, toast]);
+  }, [pendingDelete, transactions, deleteTransaction, insertTransaction, toast]);
+
+  /* Klavye kısayolları — form alanına yazılırken devre dışı. */
+  useEffect(() => {
+    let gPressed = false;
+    let gTimer: number | undefined;
+    const reset = () => {
+      gPressed = false;
+      window.clearTimeout(gTimer);
+    };
+
+    const onKey = (event: KeyboardEvent) => {
+      const el = event.target as HTMLElement | null;
+      const typing =
+        !!el &&
+        (el.tagName === "INPUT" ||
+          el.tagName === "TEXTAREA" ||
+          el.tagName === "SELECT" ||
+          el.isContentEditable);
+      if (typing || event.metaKey || event.ctrlKey || event.altKey) return;
+
+      if (event.key === "/") {
+        const input = Array.from(
+          document.querySelectorAll<HTMLInputElement>('input[type="search"]'),
+        ).find((el) => el.offsetParent !== null);
+        if (input) {
+          event.preventDefault();
+          input.focus();
+        }
+        return;
+      }
+      if (event.key === "n" || event.key === "N") {
+        event.preventDefault();
+        openNew();
+        return;
+      }
+      if (event.key === "?") {
+        toast.info(
+          "Klavye kısayolları",
+          "n: yeni işlem · /: ara · g+a alacaklar · g+b borçlar · g+c cariler · g+r raporlar",
+        );
+        return;
+      }
+      if (event.key === "g") {
+        gPressed = true;
+        window.clearTimeout(gTimer);
+        gTimer = window.setTimeout(reset, 900);
+        return;
+      }
+      if (gPressed) {
+        reset();
+        const routes: Record<string, () => void> = {
+          d: () => navigate("dashboard"),
+          l: () => navigate("ledger", "all"),
+          a: () => navigate("ledger", "receivable"),
+          b: () => navigate("ledger", "payable"),
+          c: () => navigate("contacts"),
+          r: () => navigate("reports"),
+        };
+        const go = routes[event.key.toLowerCase()];
+        if (go) {
+          event.preventDefault();
+          go();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.clearTimeout(gTimer);
+    };
+  }, [navigate, openNew, toast]);
+
+  /* Yeni service worker sürümü hazır olduğunda yenileme bildirimi. */
+  useEffect(() => {
+    const onUpdate = () =>
+      toast.info(
+        "Yeni sürüm hazır",
+        "Güncellemeyi uygulamak için sayfayı yenileyin.",
+        { label: "Yenile", onClick: () => window.location.reload() },
+        12000,
+      );
+    window.addEventListener("abt:sw-update", onUpdate);
+    return () => window.removeEventListener("abt:sw-update", onUpdate);
+  }, [toast]);
 
   const showOverdue = useCallback(() => {
     setPresetStatus("overdue");
@@ -195,7 +293,7 @@ export function App() {
         title="İşlemi sil"
         message={
           pendingDelete
-            ? `${pendingDelete.contactName} için "${pendingDelete.description || pendingDelete.category}" kaydını silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`
+            ? `${pendingDelete.contactName} için "${pendingDelete.description || pendingDelete.category}" kaydını silmek istediğinize emin misiniz? Silme sonrası kısa süre içinde geri alabilirsiniz.`
             : ""
         }
         confirmLabel="Sil"

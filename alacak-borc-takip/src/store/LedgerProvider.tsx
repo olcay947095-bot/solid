@@ -1,13 +1,22 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type {
+  Contact,
   Currency,
   LedgerRow,
+  Rates,
   Settings,
   Transaction,
   TransactionDraft,
 } from "@/types";
-import { loadSettings, loadTransactions, saveSettings, saveTransactions } from "@/lib/storage";
+import {
+  loadContacts,
+  loadSettings,
+  loadTransactions,
+  saveContacts,
+  saveSettings,
+  saveTransactions,
+} from "@/lib/storage";
 import { createSampleTransactions, makeInstallments } from "@/lib/sampleData";
 import { buildRows, remainingAmount } from "@/lib/ledger";
 import { todayISO } from "@/lib/format";
@@ -20,9 +29,13 @@ interface LedgerContextValue {
   transactions: Transaction[];
   /** Gösterim para birimine çevrilmiş, türetilmiş satırlar. */
   rows: LedgerRow[];
+  /** Kayıtlı cariler (kişi/firma bilgileri). */
+  contacts: Contact[];
   /** Tüm ayarlar (tema, aksan, duvar kağıdı, yedekleme). */
   settings: Settings;
   displayCurrency: Currency;
+  /** Ayarlardaki güncel döviz kurları. */
+  rates: Rates;
   setDisplayCurrency: (c: Currency) => void;
   theme: "light" | "dark";
   setTheme: (t: "light" | "dark") => void;
@@ -32,8 +45,15 @@ interface LedgerContextValue {
   addTransaction: (draft: TransactionDraft) => Transaction;
   updateTransaction: (id: string, draft: TransactionDraft) => void;
   deleteTransaction: (id: string) => void;
+  /** Silinen kaydı (isteğe bağlı konumuna) geri ekler. */
+  insertTransaction: (tx: Transaction, index?: number) => void;
   addPayment: (id: string, amount: number, date?: string, note?: string) => void;
   removePayment: (id: string, paymentId: string) => void;
+  /** Cariyi adına göre ekler/günceller. */
+  saveContact: (input: { name: string; phone?: string; note?: string }) => void;
+  removeContact: (id: string) => void;
+  /** Cari listesini bütünüyle değiştirir (yedekten geri yükleme). */
+  replaceContacts: (contacts: Contact[]) => void;
   /** Yedekten gelen kayıtları (isteğe bağlı ayarlarla) yükler. */
   importData: (transactions: Transaction[], settingsPatch?: Partial<Settings>) => void;
   resetDemoData: () => void;
@@ -80,6 +100,7 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>(
     () => loadTransactions() ?? createSampleTransactions(),
   );
+  const [contacts, setContacts] = useState<Contact[]>(() => loadContacts() ?? []);
   const [loading, setLoading] = useState(true);
 
   /* Kısa yapay yükleme — iskelet durumların görünmesi için. */
@@ -92,6 +113,10 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveTransactions(transactions);
   }, [transactions]);
+
+  useEffect(() => {
+    saveContacts(contacts);
+  }, [contacts]);
 
   useEffect(() => {
     saveSettings(settings);
@@ -115,8 +140,8 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
   }, [settings]);
 
   const rows = useMemo(
-    () => buildRows(transactions, settings.displayCurrency),
-    [transactions, settings.displayCurrency],
+    () => buildRows(transactions, settings.displayCurrency, settings.rates),
+    [transactions, settings.displayCurrency, settings.rates],
   );
 
   const setDisplayCurrency = useCallback((c: Currency) => {
@@ -166,6 +191,38 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
 
   const deleteTransaction = useCallback((id: string) => {
     setTransactions((prev) => prev.filter((tx) => tx.id !== id));
+  }, []);
+
+  const insertTransaction = useCallback((tx: Transaction, index?: number) => {
+    setTransactions((prev) => {
+      const next = prev.filter((item) => item.id !== tx.id);
+      const at = index === undefined ? 0 : Math.max(0, Math.min(index, next.length));
+      next.splice(at, 0, tx);
+      return next;
+    });
+  }, []);
+
+  const saveContact = useCallback((input: { name: string; phone?: string; note?: string }) => {
+    const name = input.name.trim();
+    if (!name) return;
+    const phone = input.phone?.trim() || undefined;
+    const note = input.note?.trim() || undefined;
+    setContacts((prev) => {
+      const key = name.toLocaleLowerCase("tr");
+      const existing = prev.find((c) => c.name.toLocaleLowerCase("tr") === key);
+      if (existing) {
+        return prev.map((c) => (c.id === existing.id ? { ...c, name, phone, note } : c));
+      }
+      return [...prev, { id: uid("contact"), name, phone, note, createdAt: new Date().toISOString() }];
+    });
+  }, []);
+
+  const removeContact = useCallback((id: string) => {
+    setContacts((prev) => prev.filter((c) => c.id !== id));
+  }, []);
+
+  const replaceContacts = useCallback((next: Contact[]) => {
+    setContacts(next);
   }, []);
 
   const addPayment = useCallback((id: string, amount: number, date?: string, note?: string) => {
@@ -223,8 +280,10 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
       loading,
       transactions,
       rows,
+      contacts,
       settings,
       displayCurrency: settings.displayCurrency,
+      rates: settings.rates,
       setDisplayCurrency,
       theme: settings.theme,
       setTheme,
@@ -233,8 +292,12 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
       addTransaction,
       updateTransaction,
       deleteTransaction,
+      insertTransaction,
       addPayment,
       removePayment,
+      saveContact,
+      removeContact,
+      replaceContacts,
       importData,
       resetDemoData,
       clearAll,
@@ -243,6 +306,7 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
       loading,
       transactions,
       rows,
+      contacts,
       settings,
       setDisplayCurrency,
       setTheme,
@@ -251,8 +315,12 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
       addTransaction,
       updateTransaction,
       deleteTransaction,
+      insertTransaction,
       addPayment,
       removePayment,
+      saveContact,
+      removeContact,
+      replaceContacts,
       importData,
       resetDemoData,
       clearAll,

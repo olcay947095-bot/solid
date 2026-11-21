@@ -18,6 +18,14 @@ const HEADERS = [
   "Kalan",
 ];
 
+/** Para sütunlarının indeksleri — Excel'de sağa hizalı, sayı biçimiyle yazılır. */
+const NUMERIC_COLUMNS = new Set([5, 10, 11]);
+
+/* Marka yeşili ve hairline tonları — rapor/Pdf çıktısıyla aynı palet. */
+const BRAND_HEADER_BG = "#059669";
+const HEADER_BORDER = "#CBD5E1";
+const CELL_BORDER = "#E2E8F0";
+
 function number(value: number): string {
   return value.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -82,19 +90,24 @@ export function downloadCsv(rows: LedgerRow[]): void {
 /** Satırları Excel'in açabileceği HTML tablo (.xls) olarak indirir. */
 export function downloadExcel(rows: LedgerRow[]): void {
   const body = matrix(rows);
-  const headerCells = HEADERS.map(
-    (header) =>
-      `<th style="background:#4F46E5;color:#ffffff;border:1px solid #cbd5e1;padding:6px 10px;text-align:left;font-size:12px;">${escapeHtml(
-        header,
-      )}</th>`,
-  ).join("");
+  const headerCells = HEADERS.map((header, index) => {
+    const align = NUMERIC_COLUMNS.has(index) ? "right" : "left";
+    return `<th style="background:${BRAND_HEADER_BG};color:#ffffff;border:1px solid ${HEADER_BORDER};padding:6px 10px;text-align:${align};font-size:12px;font-weight:700;">${escapeHtml(
+      header,
+    )}</th>`;
+  }).join("");
   const bodyRows = body
     .map(
       (cells) =>
         `<tr>${cells
-          .map(
-            (cell) =>
-              `<td style="border:1px solid #e2e8f0;padding:6px 10px;font-size:12px;">${escapeHtml(cell)}</td>`,
+          .map((cell, index) =>
+            NUMERIC_COLUMNS.has(index)
+              ? `<td style="border:1px solid ${CELL_BORDER};padding:6px 10px;font-size:12px;text-align:right;mso-number-format:'#,##0.00';">${escapeHtml(
+                  cell,
+                )}</td>`
+              : `<td style="border:1px solid ${CELL_BORDER};padding:6px 10px;font-size:12px;">${escapeHtml(
+                  cell,
+                )}</td>`,
           )
           .join("")}</tr>`,
     )

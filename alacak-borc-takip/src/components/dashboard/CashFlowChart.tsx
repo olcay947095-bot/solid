@@ -55,11 +55,11 @@ function Legend({ total, color, label }: { total: string; color: string; label: 
 }
 
 export function CashFlowChart() {
-  const { transactions, displayCurrency, theme, loading } = useLedger();
+  const { transactions, displayCurrency, rates, theme, loading } = useLedger();
 
   const data = useMemo(
-    () => monthlyCashFlow(transactions, displayCurrency, 6),
-    [transactions, displayCurrency],
+    () => monthlyCashFlow(transactions, displayCurrency, 6, rates),
+    [transactions, displayCurrency, rates],
   );
 
   const totals = useMemo(

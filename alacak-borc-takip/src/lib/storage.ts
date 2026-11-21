@@ -1,13 +1,23 @@
-import type { AccentId, Currency, Settings, ThemeMode, Transaction, WallpaperId } from "@/types";
+import type {
+  AccentId,
+  Contact,
+  Currency,
+  Settings,
+  ThemeMode,
+  Transaction,
+  WallpaperId,
+} from "@/types";
 
 const SETTINGS_KEY = "abt.settings.v1";
 const LEDGER_KEY = "abt.ledger.v1";
+const CONTACTS_KEY = "abt.contacts.v1";
 const THEME_KEY = "abt.theme";
 const ACCENT_KEY = "abt.accent";
 
 const DEFAULT_SETTINGS: Settings = {
   theme: "light",
   displayCurrency: "TRY",
+  rates: { TRY: 1, USD: 34, EUR: 37 },
   accent: "green",
   wallpaper: "aurora",
   wallpaperAnimated: true,
@@ -65,10 +75,18 @@ export function isValidTx(value: unknown): value is Transaction {
   );
 }
 
+/** Kaydın geçerli bir cari nesnesi olup olmadığını doğrular. */
+export function isValidContact(value: unknown): value is Contact {
+  if (!value || typeof value !== "object") return false;
+  const contact = value as Record<string, unknown>;
+  return typeof contact.id === "string" && typeof contact.name === "string";
+}
+
 /** Varsayılanlarla birleştirilmiş, doğrulanmış ayarları yükler. */
 export function loadSettings(): Settings {
   const settings: Settings = {
     ...DEFAULT_SETTINGS,
+    rates: { ...DEFAULT_SETTINGS.rates },
     backup: {
       ...DEFAULT_SETTINGS.backup,
       google: { ...DEFAULT_SETTINGS.backup.google },
@@ -86,6 +104,12 @@ export function loadSettings(): Settings {
       const parsed = JSON.parse(raw) as Partial<Settings>;
       if (isTheme(parsed.theme)) settings.theme = parsed.theme;
       if (isCurrency(parsed.displayCurrency)) settings.displayCurrency = parsed.displayCurrency;
+      const rates = parsed.rates;
+      if (rates && typeof rates === "object") {
+        if (typeof rates.USD === "number" && rates.USD > 0) settings.rates.USD = rates.USD;
+        if (typeof rates.EUR === "number" && rates.EUR > 0) settings.rates.EUR = rates.EUR;
+      }
+      settings.rates.TRY = 1;
       if (isAccent(parsed.accent)) settings.accent = parsed.accent;
       if (isWallpaper(parsed.wallpaper)) settings.wallpaper = parsed.wallpaper;
       if (typeof parsed.wallpaperAnimated === "boolean") settings.wallpaperAnimated = parsed.wallpaperAnimated;
@@ -144,6 +168,28 @@ export function saveSettings(settings: Settings): void {
 export function saveTransactions(transactions: Transaction[]): void {
   try {
     localStorage.setItem(LEDGER_KEY, JSON.stringify(transactions));
+  } catch {
+    /* kota/depolama hatası — sessizce yoksay */
+  }
+}
+
+/** Kayıtlı carileri yükler; yoksa veya bozuksa null döner. */
+export function loadContacts(): Contact[] | null {
+  try {
+    const raw = localStorage.getItem(CONTACTS_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.filter(isValidContact);
+  } catch {
+    return null;
+  }
+}
+
+/** Carileri kalıcı olarak saklar. */
+export function saveContacts(contacts: Contact[]): void {
+  try {
+    localStorage.setItem(CONTACTS_KEY, JSON.stringify(contacts));
   } catch {
     /* kota/depolama hatası — sessizce yoksay */
   }

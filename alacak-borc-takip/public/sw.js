@@ -2,7 +2,7 @@
  * Uygulama kabuğunu önbelleğe alır; gezinme isteklerinde ağ öncelikli,
  * varlıklarda önbellek öncelikli çalışır. Sürüm değişince eski önbellekler silinir. */
 
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = `abt-${VERSION}`;
 const APP_SHELL = ["/", "/index.html", "/manifest.webmanifest", "/favicon.svg"];
 
@@ -22,6 +22,11 @@ self.addEventListener("activate", (event) => {
       .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
+});
+
+/* Sayfa, yeni sürümü hemen devreye almak isterse bekleyen worker'ı etkinleştirir. */
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {

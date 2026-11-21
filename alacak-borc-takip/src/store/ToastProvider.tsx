@@ -5,19 +5,32 @@ import { cn, uid } from "@/lib/utils";
 
 type Tone = "success" | "error" | "info" | "warning";
 
+/** Bildirim içinde sunulan eylem (ör. "Geri Al"). */
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface ToastItem {
   id: string;
   tone: Tone;
   title: string;
   description?: string;
+  action?: ToastAction;
 }
 
 interface ToastApi {
-  show: (tone: Tone, title: string, description?: string) => void;
-  success: (title: string, description?: string) => void;
-  error: (title: string, description?: string) => void;
-  info: (title: string, description?: string) => void;
-  warning: (title: string, description?: string) => void;
+  show: (
+    tone: Tone,
+    title: string,
+    description?: string,
+    action?: ToastAction,
+    duration?: number,
+  ) => void;
+  success: (title: string, description?: string, action?: ToastAction, duration?: number) => void;
+  error: (title: string, description?: string, action?: ToastAction, duration?: number) => void;
+  info: (title: string, description?: string, action?: ToastAction, duration?: number) => void;
+  warning: (title: string, description?: string, action?: ToastAction, duration?: number) => void;
 }
 
 const ToastContext = createContext<ToastApi | null>(null);
@@ -43,10 +56,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const show = useCallback(
-    (tone: Tone, title: string, description?: string) => {
+    (tone: Tone, title: string, description?: string, action?: ToastAction, duration = 3600) => {
       const id = uid("toast");
-      setItems((prev) => [...prev.slice(-3), { id, tone, title, description }]);
-      const timer = setTimeout(() => dismiss(id), 3600);
+      setItems((prev) => [...prev.slice(-3), { id, tone, title, description, action }]);
+      const timer = setTimeout(() => dismiss(id), duration);
       timers.current.set(id, timer);
     },
     [dismiss],
@@ -55,10 +68,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const api = useMemo<ToastApi>(
     () => ({
       show,
-      success: (t, d) => show("success", t, d),
-      error: (t, d) => show("error", t, d),
-      info: (t, d) => show("info", t, d),
-      warning: (t, d) => show("warning", t, d),
+      success: (t, d, a, ms) => show("success", t, d, a, ms),
+      error: (t, d, a, ms) => show("error", t, d, a, ms),
+      info: (t, d, a, ms) => show("info", t, d, a, ms),
+      warning: (t, d, a, ms) => show("warning", t, d, a, ms),
     }),
     [show],
   );
@@ -86,6 +99,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <p className="text-sm font-semibold text-ink">{t.title}</p>
                 {t.description ? (
                   <p className="mt-0.5 text-xs leading-relaxed text-muted">{t.description}</p>
+                ) : null}
+                {t.action ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      t.action?.onClick();
+                      dismiss(t.id);
+                    }}
+                    className="mt-2 rounded-lg border border-brand/30 bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand transition hover:bg-brand-100 dark:bg-brand/15 dark:hover:bg-brand/25"
+                  >
+                    {t.action.label}
+                  </button>
                 ) : null}
               </div>
               <button

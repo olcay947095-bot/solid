@@ -1,4 +1,4 @@
-import type { Currency, LedgerRow, Transaction, TxStatus, TxType } from "@/types";
+import type { Currency, LedgerRow, Rates, Transaction, TxStatus, TxType } from "@/types";
 import { diffDays, todayISO } from "@/lib/format";
 
 /** İşlem türü insan okunur etiketleri. */
@@ -7,13 +7,18 @@ export const TX_TYPE_LABEL: Record<TxType, string> = {
   payable: "Borç",
 };
 
-/** Sabit kurlar (baz TRY). */
-const RATES: Record<Currency, number> = { TRY: 1, USD: 34, EUR: 37 };
+/** Varsayılan döviz kurları (1 birim = kaç TRY) — ayarlardan güncellenir. */
+export const DEFAULT_RATES: Rates = { TRY: 1, USD: 34, EUR: 37 };
 
-/** Tutarı bir para biriminden diğerine sabit kurla çevirir. */
-export function convert(amount: number, from: Currency, to: Currency): number {
+/** Tutarı bir para biriminden diğerine verilen kurla çevirir. */
+export function convert(
+  amount: number,
+  from: Currency,
+  to: Currency,
+  rates: Rates = DEFAULT_RATES,
+): number {
   if (from === to) return amount;
-  return (amount * RATES[from]) / RATES[to];
+  return (amount * rates[from]) / rates[to];
 }
 
 /** Kayıt için toplam tahsil/ödeme tutarı (kendi para biriminde). */
@@ -65,9 +70,9 @@ export function nextDueDate(tx: Transaction): string {
 }
 
 /** Kaydı gösterim para birimine çevirip türetilmiş satıra dönüştürür. */
-export function buildRow(tx: Transaction, displayCurrency: Currency): LedgerRow {
-  const total = convert(tx.amount, tx.currency, displayCurrency);
-  const paid = convert(totalPaid(tx), tx.currency, displayCurrency);
+export function buildRow(tx: Transaction, displayCurrency: Currency, rates?: Rates): LedgerRow {
+  const total = convert(tx.amount, tx.currency, displayCurrency, rates);
+  const paid = convert(totalPaid(tx), tx.currency, displayCurrency, rates);
   const remaining = Math.max(0, total - paid);
   return {
     tx,
@@ -80,8 +85,12 @@ export function buildRow(tx: Transaction, displayCurrency: Currency): LedgerRow 
 }
 
 /** Kayıt listesini türetilmiş satırlara dönüştürür. */
-export function buildRows(transactions: Transaction[], displayCurrency: Currency): LedgerRow[] {
-  return transactions.map((tx) => buildRow(tx, displayCurrency));
+export function buildRows(
+  transactions: Transaction[],
+  displayCurrency: Currency,
+  rates?: Rates,
+): LedgerRow[] {
+  return transactions.map((tx) => buildRow(tx, displayCurrency, rates));
 }
 
 export interface Kpis {
@@ -145,6 +154,7 @@ export function monthlyCashFlow(
   transactions: Transaction[],
   displayCurrency: Currency,
   months = 6,
+  rates?: Rates,
 ): CashFlowPoint[] {
   const now = new Date();
   const monthFormatter = new Intl.DateTimeFormat("tr-TR", { month: "short" });
@@ -161,7 +171,7 @@ export function monthlyCashFlow(
   for (const tx of transactions) {
     const point = byKey.get(tx.dueDate.slice(0, 7));
     if (!point) continue;
-    const remaining = convert(remainingAmount(tx), tx.currency, displayCurrency);
+    const remaining = convert(remainingAmount(tx), tx.currency, displayCurrency, rates);
     if (tx.type === "receivable") point.alacak += remaining;
     else point.borc += remaining;
   }

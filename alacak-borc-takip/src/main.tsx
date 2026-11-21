@@ -24,8 +24,22 @@ createRoot(container).render(
 /* Çevrimdışı destek — yalnızca üretim derlemesinde service worker kaydı. */
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      /* kayıt başarısız olsa da uygulama çevrimiçi çalışmaya devam eder */
-    });
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((registration) => {
+        // Yeni sürüm indirilip hazır olduğunda kullanıcıya bildir.
+        registration.addEventListener("updatefound", () => {
+          const worker = registration.installing;
+          if (!worker) return;
+          worker.addEventListener("statechange", () => {
+            if (worker.state === "installed" && navigator.serviceWorker.controller) {
+              window.dispatchEvent(new CustomEvent("abt:sw-update"));
+            }
+          });
+        });
+      })
+      .catch(() => {
+        /* kayıt başarısız olsa da uygulama çevrimiçi çalışmaya devam eder */
+      });
   });
 }

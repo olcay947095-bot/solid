@@ -1,23 +1,29 @@
-import type { BackupPayload, Settings, Transaction } from "@/types";
+import type { BackupPayload, Contact, Settings, Transaction } from "@/types";
 import { BACKUP_FILE_NAME } from "@/lib/constants";
-import { isValidTx } from "@/lib/storage";
+import { isValidContact, isValidTx } from "@/lib/storage";
 
 export const BACKUP_VERSION = 1;
 const BACKUP_APP = "alacak-borc-takip" as const;
 
 export interface ParsedBackup {
   transactions: Transaction[];
+  contacts?: Contact[];
   settings?: Partial<Settings>;
   skipped?: number;
 }
 
 /** Yedekleme nesnesini oluşturur. */
-export function createBackupPayload(transactions: Transaction[], settings: Settings): BackupPayload {
+export function createBackupPayload(
+  transactions: Transaction[],
+  settings: Settings,
+  contacts: Contact[] = [],
+): BackupPayload {
   return {
     app: BACKUP_APP,
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     transactions,
+    contacts,
     settings,
   };
 }
@@ -55,13 +61,15 @@ export function parseBackup(text: string): ParsedBackup {
   }
 
   let rawTransactions: unknown;
+  let rawContacts: unknown;
   let settings: Partial<Settings> | undefined;
 
   if (Array.isArray(data)) {
     rawTransactions = data;
   } else if (data && typeof data === "object" && "transactions" in data) {
-    const record = data as { transactions?: unknown; settings?: unknown };
+    const record = data as { transactions?: unknown; contacts?: unknown; settings?: unknown };
     rawTransactions = record.transactions;
+    rawContacts = record.contacts;
     if (record.settings && typeof record.settings === "object") {
       settings = record.settings as Partial<Settings>;
     }
@@ -84,5 +92,9 @@ export function parseBackup(text: string): ParsedBackup {
     throw new Error("Yedek dosyasında geçerli kayıt bulunamadı.");
   }
 
-  return { transactions, settings, skipped };
+  const contacts = Array.isArray(rawContacts)
+    ? rawContacts.filter(isValidContact)
+    : undefined;
+
+  return { transactions, contacts, settings, skipped };
 }

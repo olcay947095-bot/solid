@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { RowSkeleton } from "@/components/ui/Skeleton";
+import { Pagination } from "@/components/ui/Pagination";
 import { LedgerFilters } from "@/components/ledger/LedgerFilters";
 import { TransactionTable, type RowActionsProps } from "@/components/ledger/TransactionTable";
 import { TransactionCard } from "@/components/ledger/TransactionCard";
@@ -30,6 +31,9 @@ const TYPE_LABEL: Record<"all" | TxType, string> = {
   receivable: "Alacaklar",
   payable: "Borçlar",
 };
+
+/** Sayfa başına işlem satırı. */
+const PAGE_SIZE = 10;
 
 export function LedgerView({
   type,
@@ -50,12 +54,18 @@ export function LedgerView({
   const toast = useToast();
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [sort, setSort] = useState<SortOption>("due-asc");
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (presetStatus && presetStatus !== "all") {
       setFilters((f) => ({ ...f, status: presetStatus }));
     }
   }, [presetStatus]);
+
+  // Filtre, arama veya sıralama değişince ilk sayfaya dön.
+  useEffect(() => {
+    setPage(1);
+  }, [type, filters, search, sort]);
 
   const reset = () => setFilters(DEFAULT_FILTERS);
 
@@ -114,6 +124,13 @@ export function LedgerView({
     }
     return map;
   }, [filtered]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const pageItems = useMemo(
+    () => filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [filtered, safePage],
+  );
 
   const isFiltered =
     type !== "all" ||
@@ -222,14 +239,14 @@ export function LedgerView({
         <>
           <div className="hidden card overflow-hidden lg:block">
             <TransactionTable
-              rows={filtered}
+              rows={pageItems}
               displayCurrency={displayCurrency}
               runningBalance={runningBalance}
               actions={actions}
             />
           </div>
           <div className="space-y-3 lg:hidden">
-            {filtered.map((row: LedgerRow) => (
+            {pageItems.map((row: LedgerRow) => (
               <TransactionCard
                 key={row.tx.id}
                 row={row}
@@ -239,6 +256,14 @@ export function LedgerView({
               />
             ))}
           </div>
+          <Pagination
+            page={safePage}
+            pageCount={pageCount}
+            total={filtered.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+            className="card px-4 py-3"
+          />
         </>
       )}
 

@@ -47,13 +47,13 @@ interface BackupContextValue {
 const BackupContext = createContext<BackupContextValue | null>(null);
 
 export function BackupProvider({ children }: { children: ReactNode }) {
-  const { transactions, settings, updateSettings } = useLedger();
+  const { transactions, settings, contacts, updateSettings } = useLedger();
   const toast = useToast();
   const online = useOnlineStatus();
 
   /* Her render'da güncel durumu okuyabilmek için ref. */
-  const stateRef = useRef({ transactions, settings });
-  stateRef.current = { transactions, settings };
+  const stateRef = useRef({ transactions, settings, contacts });
+  stateRef.current = { transactions, settings, contacts };
 
   const tokenRef = useRef<string | null>(null);
   const queuedRef = useRef(false);
@@ -81,7 +81,7 @@ export function BackupProvider({ children }: { children: ReactNode }) {
   /** Drive'a yedek yükler. */
   const runBackup = useCallback(
     async (silent = false) => {
-      const { transactions: txs, settings: st } = stateRef.current;
+      const { transactions: txs, settings: st, contacts: ctcs } = stateRef.current;
       const g = st.backup.google;
       const token = tokenRef.current;
 
@@ -102,7 +102,7 @@ export function BackupProvider({ children }: { children: ReactNode }) {
       setStatus("syncing");
       setError(null);
       try {
-        const content = serializeBackup(createBackupPayload(txs, st));
+        const content = serializeBackup(createBackupPayload(txs, st, ctcs));
         const meta = await uploadBackup(token, content, g.fileId);
         const now = new Date().toISOString();
         const b = stateRef.current.settings.backup;
@@ -157,6 +157,40 @@ export function BackupProvider({ children }: { children: ReactNode }) {
     [toast, updateSettings],
   );
 
+  /* Sayfa yenilendikten sonra izin hâlâ geçerliyse jetonu sessizce yenile.
+     Erişim jetonu oturuma özeldir; bu adım bağlantının kalıcılığını sağlar. */
+  const reconnectedRef = useRef(false);
+  useEffect(() => {
+    if (reconnectedRef.current) return;
+    const g = settings.backup.google;
+    if (g.connected || !g.enabled || !g.clientId.trim()) {
+      reconnectedRef.current = true;
+      return;
+    }
+    reconnectedRef.current = true;
+    if (!navigator.onLine) return;
+    void (async () => {
+      try {
+        const token = await requestAccessToken(g.clientId, { silent: true });
+        tokenRef.current = token;
+        const email = await fetchAccountEmail(token);
+        const b = stateRef.current.settings.backup;
+        updateSettings({
+          backup: {
+            ...b,
+            google: { ...b.google, connected: true, account: email ?? b.google.account },
+          },
+        });
+        toast.info(
+          "Google Drive yeniden bağlandı",
+          email ? `${email} hesabına otomatik yedekleme sürüyor.` : "Otomatik yedekleme sürüyor.",
+        );
+      } catch {
+        /* Sessiz yeniden bağlantı kurulamadı — kullanıcı elle yeniden bağlanabilir. */
+      }
+    })();
+  }, [settings.backup.google, updateSettings, toast]);
+
   const disconnectGoogle = useCallback(() => {
     tokenRef.current = null;
     queuedRef.current = false;
@@ -190,8 +224,8 @@ export function BackupProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const exportLocalBackup = useCallback(() => {
-    const { transactions: txs, settings: st } = stateRef.current;
-    downloadBackupFile(createBackupPayload(txs, st));
+    const { transactions: txs, settings: st, contacts: ctcs } = stateRef.current;
+    downloadBackupFile(createBackupPayload(txs, st, ctcs));
     toast.success("Yedek indirildi", "Cihazınıza JSON yedek dosyası kaydedildi.");
   }, [toast]);
 
@@ -301,6 +335,7 @@ export function mergeRestoredSettings(current: Settings, patch?: Partial<Setting
   return {
     theme: patch.theme === "dark" ? "dark" : "light",
     displayCurrency: patch.displayCurrency,
+    rates: patch.rates,
     accent: patch.accent,
     wallpaper: patch.wallpaper,
     wallpaperAnimated: patch.wallpaperAnimated,

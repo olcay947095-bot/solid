@@ -5,6 +5,7 @@ import { CATEGORIES } from "@/lib/constants";
 import { useLedger } from "@/store/LedgerProvider";
 import { useToast } from "@/store/ToastProvider";
 import { makeInstallments } from "@/lib/sampleData";
+import { totalPaid } from "@/lib/ledger";
 import { addMonths, formatCurrency, formatDate, todayISO } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Sheet } from "@/components/ui/Sheet";
@@ -100,11 +101,19 @@ export function TransactionForm({
   );
 
   const isReceivable = form.type === "receivable";
+  const editingPaid = editing ? totalPaid(editing) : 0;
 
   const validate = (): boolean => {
     const next: Record<string, string> = {};
     if (!form.contactName.trim()) next.contactName = "Kişi veya firma adı zorunludur.";
     if (amountValue <= 0) next.amount = "Geçerli bir tutar giriniz.";
+    // Kayıtlı ödemelerin altına düşen tutar, ödeme dengesini bozar.
+    if (editing && form.currency === editing.currency) {
+      const paid = totalPaid(editing);
+      if (amountValue > 0 && paid > 0 && amountValue + 0.01 < paid) {
+        next.amount = `Girilen tutar, kayıtlı ödemelerden (${formatCurrency(paid, editing.currency)}) düşük olamaz.`;
+      }
+    }
     if (!form.issueDate) next.issueDate = "İşlem tarihi zorunludur.";
     if (!form.dueDate) next.dueDate = "Vade tarihi zorunludur.";
     if (form.dueDate && form.issueDate && form.dueDate < form.issueDate)
@@ -212,7 +221,16 @@ export function TransactionForm({
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Tutar" required error={errors.amount}>
+          <Field
+            label="Tutar"
+            required
+            error={errors.amount}
+            hint={
+              editingPaid > 0 && editing
+                ? `Bu kayıtta ${formatCurrency(editingPaid, editing.currency)} ödeme var; tutar bunun altına inemez.`
+                : undefined
+            }
+          >
             <Input
               value={form.amount}
               onChange={(e) => patch({ amount: e.target.value })}

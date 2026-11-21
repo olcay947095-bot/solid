@@ -79,18 +79,27 @@ async function readError(response: Response, fallback: string): Promise<string> 
   }
 }
 
-/** Kullanıcıdan Drive appDataFolder izni ister ve erişim jetonu döner. */
-export async function requestAccessToken(clientId: string): Promise<string> {
+/**
+ * Kullanıcıdan Drive appDataFolder izni ister ve erişim jetonu döner.
+ * `silent` true ise onay penceresi gösterilmez; daha önce izin verilmişse
+ * sayfa yenilendikten sonra jetonu etkileşimsiz olarak yeniler.
+ */
+export async function requestAccessToken(
+  clientId: string,
+  opts: { silent?: boolean } = {},
+): Promise<string> {
   if (!clientId.trim()) throw new Error("Google İstemci Kimliği gerekli.");
   await loadGis();
   const oauth2 = window.google?.accounts?.oauth2;
   if (!oauth2) throw new Error("Google kimlik servisi kullanılamıyor.");
 
+  const prompt = opts.silent ? "" : "consent";
+
   return new Promise<string>((resolve, reject) => {
     const client = oauth2.initTokenClient({
       client_id: clientId,
       scope: `${GOOGLE_DRIVE_SCOPE} openid email profile`,
-      prompt: "consent",
+      prompt,
       callback: (response) => {
         if (response.error || !response.access_token) {
           reject(new Error(response.error || "Erişim izni alınamadı."));
@@ -98,9 +107,10 @@ export async function requestAccessToken(clientId: string): Promise<string> {
         }
         resolve(response.access_token);
       },
-      error_callback: () => reject(new Error("Google bağlantı penceresi kapatıldı.")),
+      error_callback: () =>
+        reject(new Error(opts.silent ? "Sessiz yeniden bağlantı kurulamadı." : "Google bağlantı penceresi kapatıldı.")),
     });
-    client.requestAccessToken({ prompt: "consent" });
+    client.requestAccessToken({ prompt });
   });
 }
 

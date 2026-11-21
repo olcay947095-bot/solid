@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { BarChart3, Download, FileSpreadsheet, FileText, Printer } from "lucide-react";
-import type { TxType } from "@/types";
+import type { TxStatus, TxType } from "@/types";
+import { STATUS_FILTERS, STATUS_META } from "@/lib/constants";
 import { useLedger } from "@/store/LedgerProvider";
 import { useToast } from "@/store/ToastProvider";
 import { monthlyCashFlow } from "@/lib/ledger";
@@ -40,9 +41,10 @@ const SCOPE_OPTIONS: { value: ReportScope; label: string }[] = [
 ];
 
 export function ReportsView() {
-  const { rows, displayCurrency, loading } = useLedger();
+  const { rows, displayCurrency, rates, loading } = useLedger();
   const toast = useToast();
   const [type, setType] = useState<"all" | TxType>("all");
+  const [status, setStatus] = useState<TxStatus | "all">("all");
   const [scope, setScope] = useState<ReportScope>("all");
   const [contact, setContact] = useState("");
   const [from, setFrom] = useState("");
@@ -61,12 +63,13 @@ export function ReportsView() {
     () =>
       rows.filter((r) => {
         if (type !== "all" && r.tx.type !== type) return false;
+        if (status !== "all" && r.status !== status) return false;
         if (scope === "contact" && r.tx.contactName !== activeContact) return false;
         if (from && r.tx.dueDate < from) return false;
         if (to && r.tx.dueDate > to) return false;
         return true;
       }),
-    [rows, type, scope, activeContact, from, to],
+    [rows, type, status, scope, activeContact, from, to],
   );
 
   const filteredTxs = useMemo(() => filtered.map((r) => r.tx), [filtered]);
@@ -94,8 +97,8 @@ export function ReportsView() {
   }, [filtered]);
 
   const cashFlow = useMemo(
-    () => monthlyCashFlow(filteredTxs, displayCurrency, 6),
-    [filteredTxs, displayCurrency],
+    () => monthlyCashFlow(filteredTxs, displayCurrency, 6, rates),
+    [filteredTxs, displayCurrency, rates],
   );
 
   const categoryTotal = categoryData.reduce((s, c) => s + c.value, 0);
@@ -126,6 +129,7 @@ export function ReportsView() {
       from,
       to,
       typeLabel: TYPE_OPTIONS.find((o) => o.value === type)?.label ?? "Tümü",
+      statusLabel: status !== "all" ? STATUS_META[status].label : undefined,
       displayCurrency,
     });
     const notice = pdfOutcomeToast(outcome);
@@ -142,6 +146,18 @@ export function ReportsView() {
               <p className="mb-1.5 text-[13px] font-semibold text-ink">Tür</p>
               <Segmented options={TYPE_OPTIONS} value={type} onChange={setType} size="sm" />
             </div>
+            <Field label="Durum" className="w-[calc(50%_-_0.375rem)] sm:w-[150px]">
+              <Select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as TxStatus | "all")}
+              >
+                {STATUS_FILTERS.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
             <div>
               <p className="mb-1.5 text-[13px] font-semibold text-ink">Rapor Kapsamı</p>
               <Segmented options={SCOPE_OPTIONS} value={scope} onChange={setScope} size="sm" />
@@ -314,7 +330,8 @@ export function ReportsView() {
       </div>
 
       <p className="px-1 text-xs text-faint">
-        Tüm tutarlar seçili gösterim para birimine ({displayCurrency}) sabit kur ile çevrilmiştir. Dışa aktarılan dosyalar işlemlerin kendi para birimini içerir.
+        Tüm tutarlar seçili gösterim para birimine ({displayCurrency}) Ayarlar'da tanımlı döviz
+        kurlarıyla çevrilmiştir. Dışa aktarılan dosyalar işlemlerin kendi para birimini içerir.
       </p>
     </div>
   );

@@ -5,6 +5,7 @@ import type { Filters, LedgerRow, TxStatus, TxType } from "@/types";
 import { STATUS_META, type SortOption } from "@/lib/constants";
 import { useLedger } from "@/store/LedgerProvider";
 import { useToast } from "@/store/ToastProvider";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { exportReportPdf, pdfOutcomeToast } from "@/lib/report";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,7 @@ export function LedgerView({
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [sort, setSort] = useState<SortOption>("due-asc");
   const [page, setPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(search, 200);
 
   useEffect(() => {
     if (presetStatus && presetStatus !== "all") {
@@ -65,12 +67,12 @@ export function LedgerView({
   // Filtre, arama veya sıralama değişince ilk sayfaya dön.
   useEffect(() => {
     setPage(1);
-  }, [type, filters, search, sort]);
+  }, [type, filters, debouncedSearch, sort]);
 
   const reset = () => setFilters(DEFAULT_FILTERS);
 
   const filtered = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase("tr");
+    const query = debouncedSearch.trim().toLocaleLowerCase("tr");
     const list = rows.filter((r) => {
       if (type !== "all" && r.tx.type !== type) return false;
       if (filters.status !== "all" && r.status !== filters.status) return false;
@@ -102,7 +104,7 @@ export function LedgerView({
       }
     });
     return sorted;
-  }, [rows, type, filters, search, sort]);
+  }, [rows, type, filters, debouncedSearch, sort]);
 
   const summary = useMemo(() => {
     let receivable = 0;
@@ -138,9 +140,9 @@ export function LedgerView({
     filters.category !== "all" ||
     !!filters.from ||
     !!filters.to ||
-    !!search.trim();
+    !!debouncedSearch.trim();
 
-  const trimmedSearch = search.trim();
+  const trimmedSearch = debouncedSearch.trim();
   const handlePdf = () => {
     if (filtered.length === 0) {
       toast.warning("Raporlanacak kayıt yok", "Lütfen filtreleri değiştirin.");

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { LedgerProvider } from "@/store/LedgerProvider";
 import { ToastProvider } from "@/store/ToastProvider";
 import { BackupProvider } from "@/store/BackupProvider";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { App } from "@/App";
 import "@/index.css";
 
@@ -11,13 +12,15 @@ if (!container) throw new Error("Kök eleman (#root) bulunamadı.");
 
 createRoot(container).render(
   <StrictMode>
-    <LedgerProvider>
-      <ToastProvider>
-        <BackupProvider>
-          <App />
-        </BackupProvider>
-      </ToastProvider>
-    </LedgerProvider>
+    <ErrorBoundary>
+      <LedgerProvider>
+        <ToastProvider>
+          <BackupProvider>
+            <App />
+          </BackupProvider>
+        </ToastProvider>
+      </LedgerProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );
 

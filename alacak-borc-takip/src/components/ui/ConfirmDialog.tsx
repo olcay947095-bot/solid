@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,9 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(panelRef, open);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCancel();
@@ -35,7 +39,14 @@ export function ConfirmDialog({
   return createPortal(
     <div className="fixed inset-0 z-[95] flex items-end justify-center p-0 sm:items-center sm:p-4">
       <div className="absolute inset-0 animate-fade-in bg-slate-900/50 backdrop-blur-[2px]" onClick={onCancel} />
-      <div className="relative w-full animate-slide-up rounded-t-3xl border border-line bg-surface p-6 shadow-pop sm:max-w-sm sm:animate-scale-in sm:rounded-2xl">
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        role="alertdialog"
+        aria-modal="true"
+        aria-label={title}
+        className="relative w-full animate-slide-up rounded-t-3xl border border-line bg-surface p-6 shadow-pop outline-none sm:max-w-sm sm:animate-scale-in sm:rounded-2xl"
+      >
         <div
           className={cn(
             "flex h-11 w-11 items-center justify-center rounded-2xl",

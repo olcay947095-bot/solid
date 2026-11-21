@@ -210,7 +210,7 @@ export function buildReportHtml(opts: ReportOptions): string {
   }
 
   <p class="foot">
-    Toplam ${rows.length} kayıt · Tüm tutarlar ${escapeHtml(displayCurrency)} birimine sabit kur ile çevrilmiştir.
+    Toplam ${rows.length} kayıt · Tüm tutarlar ${escapeHtml(displayCurrency)} birimine Ayarlar'da tanımlı döviz kurlarıyla çevrilmiştir.
     Bu rapor ${escapeHtml(BRAND.full)} takip paneli ile oluşturulmuştur.
   </p>
 </body>

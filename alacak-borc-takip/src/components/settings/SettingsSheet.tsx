@@ -103,7 +103,8 @@ function RateInput({
 }
 
 export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { settings, updateSettings, importData, resetDemoData, clearAll, transactions } = useLedger();
+  const { settings, updateSettings, importData, replaceContacts, resetDemoData, clearAll, transactions } =
+    useLedger();
   const backup = useBackup();
   const toast = useToast();
 
@@ -144,9 +145,13 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
   const applyRestore = () => {
     if (!pending) return;
     importData(pending.transactions, mergeRestoredSettings(settings, pending.settings));
+    // Yedekte cari listesi varsa geri yükle; yoksa (eski yedekler) mevcut cariler korunur.
+    if (pending.contacts !== undefined) replaceContacts(pending.contacts);
+    const contactNote =
+      pending.contacts !== undefined ? `, ${pending.contacts.length} cari` : "";
     toast.success(
       "Geri yükleme tamamlandı",
-      `${pending.transactions.length} kayıt yüklendi${
+      `${pending.transactions.length} kayıt${contactNote} yüklendi${
         pending.skipped ? `, ${pending.skipped} kayıt atlandı` : ""
       }.`,
     );

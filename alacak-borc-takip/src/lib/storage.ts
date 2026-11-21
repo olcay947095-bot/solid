@@ -194,3 +194,17 @@ export function saveContacts(contacts: Contact[]): void {
     /* kota/depolama hatası — sessizce yoksay */
   }
 }
+
+/** Kayıtlı ham verileri döndürür — beklenmedik hata durumunda kurtarma dışa aktarımı için. */
+export function readRawData(): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key of [LEDGER_KEY, CONTACTS_KEY, SETTINGS_KEY]) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) out[key] = JSON.parse(raw);
+    } catch {
+      /* bozuk kayıt — atla */
+    }
+  }
+  return out;
+}

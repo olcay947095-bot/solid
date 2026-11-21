@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useIsMobile } from "@/hooks/useMediaQuery";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { cn } from "@/lib/utils";
 
 interface SheetProps {
@@ -21,6 +22,8 @@ interface SheetProps {
  */
 export function Sheet({ open, onClose, title, description, children, footer, size = "md" }: SheetProps) {
   const isMobile = useIsMobile();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(panelRef, open);
 
   useEffect(() => {
     if (!open) return;
@@ -45,8 +48,10 @@ export function Sheet({ open, onClose, title, description, children, footer, siz
         onClick={onClose}
       />
       <div
+        ref={panelRef}
+        tabIndex={-1}
         className={cn(
-          "absolute flex flex-col border-line bg-surface shadow-pop",
+          "absolute flex flex-col border-line bg-surface shadow-pop outline-none",
           isMobile
             ? "inset-x-0 bottom-0 max-h-[92vh] max-h-[92dvh] animate-sheet-up rounded-t-3xl border-t"
             : cn(

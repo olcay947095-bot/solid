@@ -332,15 +332,29 @@ export function useBackup(): BackupContextValue {
 /** Yedekten gelen ayarları mevcut ayarlarla güvenli biçimde birleştirir. */
 export function mergeRestoredSettings(current: Settings, patch?: Partial<Settings>): Partial<Settings> {
   if (!patch) return {};
-  return {
-    theme: patch.theme === "dark" ? "dark" : "light",
-    displayCurrency: patch.displayCurrency,
-    rates: patch.rates,
-    accent: patch.accent,
-    wallpaper: patch.wallpaper,
-    wallpaperAnimated: patch.wallpaperAnimated,
-    wallpaperIntensity: patch.wallpaperIntensity,
-    // Bulut bağlantı durumu cihaza özeldir; asla geri yüklenmez.
-    backup: current.backup,
-  };
+  const next: Partial<Settings> = {};
+
+  // Yalnızca yedekte geçerli olan alanlar uygulanır; eksik alanlar mevcut
+  // ayarları bozmaz (eski yedeklerde bu alanlar bulunmayabilir).
+  if (patch.theme === "dark" || patch.theme === "light") next.theme = patch.theme;
+  if (patch.displayCurrency) next.displayCurrency = patch.displayCurrency;
+  if (patch.accent) next.accent = patch.accent;
+  if (patch.wallpaper) next.wallpaper = patch.wallpaper;
+  if (typeof patch.wallpaperAnimated === "boolean") next.wallpaperAnimated = patch.wallpaperAnimated;
+  if (typeof patch.wallpaperIntensity === "number") {
+    next.wallpaperIntensity = Math.min(100, Math.max(0, Math.round(patch.wallpaperIntensity)));
+  }
+
+  const rates = patch.rates;
+  if (rates && typeof rates === "object") {
+    next.rates = {
+      TRY: 1,
+      USD: typeof rates.USD === "number" && rates.USD > 0 ? rates.USD : current.rates.USD,
+      EUR: typeof rates.EUR === "number" && rates.EUR > 0 ? rates.EUR : current.rates.EUR,
+    };
+  }
+
+  // Bulut bağlantı durumu cihaza özeldir; asla geri yüklenmez.
+  next.backup = current.backup;
+  return next;
 }

@@ -3,6 +3,7 @@ import { MessageCircle, Pencil, Phone, StickyNote, Trash2, UserPlus, UserRound, 
 import type { Transaction } from "@/types";
 import { useLedger } from "@/store/LedgerProvider";
 import { useToast } from "@/store/ToastProvider";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { contactSummaries, remainingAmount, type ContactSummary } from "@/lib/ledger";
 import { buildReminderMessage, openWhatsApp } from "@/lib/whatsapp";
 import { addDays, dueLabel, formatCurrency, formatDate, todayISO } from "@/lib/format";
@@ -46,6 +47,7 @@ export function ContactsView({
   const [selected, setSelected] = useState<ContactRow | null>(null);
   const [pendingRemove, setPendingRemove] = useState<ContactRow | null>(null);
   const [page, setPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(search, 200);
 
   // Cari formu
   const [editorOpen, setEditorOpen] = useState(false);
@@ -87,16 +89,16 @@ export function ContactsView({
   }, [rows, savedContacts]);
 
   const visible = useMemo(() => {
-    const q = search.trim().toLocaleLowerCase("tr");
+    const q = debouncedSearch.trim().toLocaleLowerCase("tr");
     if (!q) return all;
     return all.filter(
       (c) => c.name.toLocaleLowerCase("tr").includes(q) || (c.phone ?? "").includes(q),
     );
-  }, [all, search]);
+  }, [all, debouncedSearch]);
 
   useEffect(() => {
     setPage(1);
-  }, [search]);
+  }, [debouncedSearch]);
 
   const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);

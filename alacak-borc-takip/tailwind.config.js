@@ -54,10 +54,17 @@ export default {
         sans: ['"Plus Jakarta Sans"', "Inter", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
       },
       boxShadow: {
-        card: "0 1px 2px 0 rgba(15,23,42,0.04), 0 1px 3px 0 rgba(15,23,42,0.06)",
-        "card-hover": "0 10px 24px -6px rgba(15,23,42,0.12), 0 4px 8px -4px rgba(15,23,42,0.06)",
-        pop: "0 24px 48px -12px rgba(15,23,42,0.24)",
+        /* Katmanlı yükselti — CSS değişkenleriyle tema ile değişir (src/index.css) */
+        card: "var(--elev-1)",
+        "card-hover": "var(--elev-2)",
+        pop: "var(--elev-3)",
         "inner-line": "inset 0 0 0 1px rgb(var(--c-border))",
+        glow: "0 0 0 1px rgb(var(--c-brand) / 0.25), 0 22px 48px -20px rgb(var(--c-brand) / 0.5)",
+      },
+      backgroundImage: {
+        "brand-fade": "radial-gradient(120% 80% at 50% 0%, rgb(var(--c-brand) / 0.14), transparent 62%)",
+        gold: "linear-gradient(120deg, #efd88a, #c9a227 55%, #a6841a)",
+        sheen: "linear-gradient(100deg, transparent, rgb(255 255 255 / 0.28), transparent)",
       },
       borderRadius: {
         xl: "0.875rem",
@@ -98,6 +105,10 @@ export default {
           "0%": { transform: "translateX(-120%)" },
           "100%": { transform: "translateX(220%)" },
         },
+        "gradient-pan": {
+          "0%, 100%": { "background-position": "0% 50%" },
+          "50%": { "background-position": "100% 50%" },
+        },
       },
       animation: {
         "fade-in": "fade-in 0.2s ease-out",
@@ -108,6 +119,7 @@ export default {
         float: "float 6s ease-in-out infinite",
         "pulse-ring": "pulse-ring 2.4s cubic-bezier(0.16,1,0.3,1) infinite",
         sheen: "sheen 3.4s ease-in-out infinite",
+        "gradient-pan": "gradient-pan 9s ease infinite",
       },
     },
   },

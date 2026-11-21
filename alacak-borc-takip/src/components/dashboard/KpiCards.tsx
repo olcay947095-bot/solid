@@ -9,24 +9,32 @@ import { Badge } from "@/components/ui/Badge";
 
 type Tone = "brand" | "success" | "danger" | "warning";
 
-const TONES: Record<Tone, { iconWrap: string; accent: string; value: string }> = {
+const TONES: Record<Tone, { iconWrap: string; ring: string; bar: string; accent: string; value: string }> = {
   brand: {
     iconWrap: "bg-brand-50 text-brand dark:bg-brand/15 dark:text-brand-100",
+    ring: "ring-brand/15",
+    bar: "from-brand/80 via-brand/30 to-transparent",
     accent: "from-brand/10",
     value: "text-ink",
   },
   success: {
     iconWrap: "bg-receivable-soft text-receivable dark:bg-receivable-softdark dark:text-receivable",
+    ring: "ring-receivable/15",
+    bar: "from-receivable/80 via-receivable/30 to-transparent",
     accent: "from-receivable/10",
     value: "text-ink",
   },
   danger: {
     iconWrap: "bg-payable-soft text-payable dark:bg-payable-softdark dark:text-payable",
+    ring: "ring-payable/15",
+    bar: "from-payable/80 via-payable/30 to-transparent",
     accent: "from-payable/10",
     value: "text-ink",
   },
   warning: {
     iconWrap: "bg-amber-soft text-amber dark:bg-amber-softdark dark:text-amber",
+    ring: "ring-amber/15",
+    bar: "from-amber/80 via-amber/30 to-transparent",
     accent: "from-amber/10",
     value: "text-ink",
   },
@@ -49,15 +57,24 @@ function KpiCard({
 }) {
   const t = TONES[tone];
   return (
-    <div className="card group relative h-full overflow-hidden p-5">
+    <div className="card group relative h-full overflow-hidden p-5 transition-shadow duration-300 hover:shadow-card-hover">
+      <span className={cn("pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r", t.bar)} />
       <div
         className={cn(
-          "pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-gradient-to-br to-transparent blur-xl transition-opacity duration-300 group-hover:opacity-100",
+          "pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-gradient-to-br to-transparent blur-2xl",
           t.accent,
         )}
       />
       <div className="relative flex items-start justify-between gap-3">
-        <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", t.iconWrap)}>{icon}</div>
+        <div
+          className={cn(
+            "flex h-11 w-11 items-center justify-center rounded-2xl ring-1 ring-inset",
+            t.iconWrap,
+            t.ring,
+          )}
+        >
+          {icon}
+        </div>
         {highlight ? (
           <Badge tone="danger" icon={<TriangleAlert className="h-3 w-3" />}>
             Acil

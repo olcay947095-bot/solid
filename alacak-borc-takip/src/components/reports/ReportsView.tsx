@@ -7,7 +7,7 @@ import { useToast } from "@/store/ToastProvider";
 import { monthlyCashFlow } from "@/lib/ledger";
 import { formatCompact, formatCurrency } from "@/lib/format";
 import { downloadCsv, downloadExcel } from "@/lib/csv";
-import { exportReportPdf, type ReportScope } from "@/lib/report";
+import { exportReportPdf, pdfOutcomeToast, type ReportScope } from "@/lib/report";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select } from "@/components/ui/Field";
@@ -119,7 +119,7 @@ export function ReportsView() {
       toast.warning("Raporlanacak kayıt yok", "Lütfen filtreleri değiştirin.");
       return;
     }
-    const ok = exportReportPdf({
+    const outcome = exportReportPdf({
       rows: filtered,
       scope,
       contact: activeContact,
@@ -128,11 +128,8 @@ export function ReportsView() {
       typeLabel: TYPE_OPTIONS.find((o) => o.value === type)?.label ?? "Tümü",
       displayCurrency,
     });
-    if (ok) {
-      toast.success("Rapor hazırlandı", "Açılan pencereden “PDF olarak kaydet” seçebilirsiniz.");
-    } else {
-      toast.error("Pencere açılamadı", "Tarayıcınız açılır pencereyi engellemiş olabilir.");
-    }
+    const notice = pdfOutcomeToast(outcome);
+    toast[notice.tone](notice.title, notice.description);
   };
 
   return (

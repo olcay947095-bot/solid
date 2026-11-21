@@ -5,7 +5,7 @@ import type { Filters, LedgerRow, TxStatus, TxType } from "@/types";
 import { STATUS_META, type SortOption } from "@/lib/constants";
 import { useLedger } from "@/store/LedgerProvider";
 import { useToast } from "@/store/ToastProvider";
-import { exportReportPdf } from "@/lib/report";
+import { exportReportPdf, pdfOutcomeToast } from "@/lib/report";
 import { formatCurrency } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
@@ -118,7 +118,7 @@ export function LedgerView({
       toast.warning("Raporlanacak kayıt yok", "Lütfen filtreleri değiştirin.");
       return;
     }
-    const ok = exportReportPdf({
+    const outcome = exportReportPdf({
       rows: filtered,
       scope: "all",
       from: filters.from,
@@ -129,11 +129,8 @@ export function LedgerView({
       searchLabel: trimmedSearch || undefined,
       displayCurrency,
     });
-    if (ok) {
-      toast.success("Rapor hazırlandı", "Açılan pencereden “PDF olarak kaydet” seçebilirsiniz.");
-    } else {
-      toast.error("Pencere açılamadı", "Tarayıcınız açılır pencereyi engellemiş olabilir.");
-    }
+    const notice = pdfOutcomeToast(outcome);
+    toast[notice.tone](notice.title, notice.description);
   };
 
   return (

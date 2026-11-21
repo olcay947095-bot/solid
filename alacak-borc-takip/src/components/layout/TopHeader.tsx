@@ -90,7 +90,11 @@ export function TopHeader({
   const { displayCurrency, setDisplayCurrency } = useLedger();
 
   return (
-    <header className="no-print safe-top sticky top-0 z-30 border-b border-line bg-bg/70 backdrop-blur-xl">
+    <header className="no-print safe-top glass sticky top-0 z-30 border-b border-line">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand/30 to-transparent"
+      />
       {/* Mobil marka letterhead */}
       <div className="flex flex-col items-center gap-1.5 px-4 pb-2.5 pt-3 lg:hidden">
         <Logo size={34} />

@@ -11,13 +11,7 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 export function Card({ children, interactive, pad = true, className, ...rest }: CardProps) {
   return (
     <div
-      className={cn(
-        "card",
-        pad && "p-5",
-        interactive &&
-          "transition-all duration-200 hover:shadow-card-hover hover:border-brand/25 cursor-pointer",
-        className,
-      )}
+      className={cn("card", pad && "p-5", interactive && "card-hover", className)}
       {...rest}
     >
       {children}

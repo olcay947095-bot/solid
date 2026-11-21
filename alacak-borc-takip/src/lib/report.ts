@@ -217,30 +217,121 @@ export function buildReportHtml(opts: ReportOptions): string {
 </html>`;
 }
 
-/** Raporu yeni bir pencerede açar ve yazdırma/PDF görünümünü tetikler. */
-export function exportReportPdf(opts: ReportOptions): boolean {
+/** Raporun nasıl sunulduğunu belirtir. */
+export type PdfOutcome = "print" | "window" | "download" | "blocked";
+
+/** Gizli bir çerçevede raporu yazdırır — açılır pencere engeline takılmaz. */
+function printInFrame(html: string): boolean {
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;";
+  document.body.appendChild(frame);
+
+  try {
+    const win = frame.contentWindow;
+    if (!win) throw new Error("frame yok");
+
+    // Kısıtlı (opak kökenli) kum havuzunda document erişimi burada hata verir.
+    const doc = win.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    window.setTimeout(() => {
+      try {
+        win.focus();
+        win.print();
+      } catch {
+        /* yazdırma engellendiyse çerçeve sessizce kaldırılır */
+      } finally {
+        window.setTimeout(() => frame.remove(), 1200);
+      }
+    }, 400);
+
+    return true;
+  } catch {
+    frame.remove();
+    return false;
+  }
+}
+
+/** Raporu Blob URL ile yeni sekmede açar. */
+function openInNewTab(html: string): boolean {
+  const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+  const win = window.open(url, "_blank");
+  if (!win) {
+    URL.revokeObjectURL(url);
+    return false;
+  }
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return true;
+}
+
+/** Raporu indirilebilir bir dosya olarak kaydeder (kısıtlı ortamlarda son çare). */
+function downloadHtml(html: string): void {
+  const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${BRAND.full} - Alacak Borc Raporu.html`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+/**
+ * Raporu yazdırma/PDF görünümüyle sunar. Önce gizli çerçeve ile yazdırmayı dener
+ * (açılır pencere engeline takılmaz); olmazsa yeni sekme; o da engellenirse dosya indirir.
+ */
+export function exportReportPdf(opts: ReportOptions): PdfOutcome {
   const html = buildReportHtml(opts);
-  const win = window.open("", "_blank", "width=980,height=1040");
-  if (!win) return false;
 
-  win.document.open();
-  win.document.write(html);
-  win.document.close();
+  if (printInFrame(html)) return "print";
 
-  const trigger = () => {
-    try {
-      win.focus();
-      win.print();
-    } catch {
-      /* yazdırma çağrısı engellendiyse pencere açık kalır */
-    }
-  };
-
-  if (win.document.readyState === "complete") {
-    setTimeout(trigger, 250);
-  } else {
-    win.addEventListener("load", () => setTimeout(trigger, 250));
+  try {
+    if (openInNewTab(html)) return "window";
+  } catch {
+    /* yeni sekme engellendi → indirme yoluna düş */
   }
 
-  return true;
+  try {
+    downloadHtml(html);
+    return "download";
+  } catch {
+    return "blocked";
+  }
+}
+
+/** PDF sunum sonucunu kullanıcı bildirimine çevirir. */
+export function pdfOutcomeToast(outcome: PdfOutcome): {
+  tone: "success" | "error" | "info";
+  title: string;
+  description: string;
+} {
+  switch (outcome) {
+    case "print":
+      return {
+        tone: "success",
+        title: "Yazdırma penceresi açıldı",
+        description: "Hedef olarak “PDF olarak kaydet” seçeneğini kullanabilirsiniz.",
+      };
+    case "window":
+      return {
+        tone: "success",
+        title: "Rapor hazırlandı",
+        description: "Açılan sekmeden “PDF olarak kaydet” seçebilirsiniz.",
+      };
+    case "download":
+      return {
+        tone: "info",
+        title: "Rapor indirildi",
+        description: "Dosyayı açıp “Yazdır → PDF olarak kaydet” ile PDF'e çevirebilirsiniz.",
+      };
+    default:
+      return {
+        tone: "error",
+        title: "Rapor açılamadı",
+        description: "Tarayıcınız açılır pencere ve yazdırmayı engelliyor olabilir.",
+      };
+  }
 }

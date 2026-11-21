@@ -24,7 +24,7 @@ export function Segmented<T extends string>({
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1 rounded-xl border border-line bg-surface-2 p-1",
+        "inline-flex items-center gap-1 rounded-xl border border-line bg-surface-2/70 p-1 ring-1 ring-inset ring-black/[0.02] backdrop-blur-sm",
         full && "flex w-full",
         className,
       )}
@@ -44,7 +44,7 @@ export function Segmented<T extends string>({
               full && "flex-1",
               size === "sm" ? "h-8 px-3 text-[13px]" : "h-9 px-3.5 text-sm",
               active
-                ? "bg-surface text-ink shadow-sm"
+                ? "bg-surface text-ink shadow-sm ring-1 ring-inset ring-brand/15"
                 : "text-muted hover:text-ink",
             )}
           >

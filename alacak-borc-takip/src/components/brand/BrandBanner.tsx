@@ -11,28 +11,43 @@ const CHIPS = [
 /** Panonun tepesindeki kurumsal kimlik bandı — marka, tema ve güven vurgusu. */
 export function BrandBanner() {
   return (
-    <section className="sheen relative overflow-hidden rounded-2xl border border-brand/25 bg-gradient-to-br from-[#04372B] via-[#06503C] to-[#021A14] p-5 text-white shadow-card sm:p-6">
-      <div className="pointer-events-none absolute -right-8 -top-10 h-44 w-44 opacity-[0.12]">
+    <section className="sheen ring-1 ring-white/10 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#052E22] via-[#064E3B] to-[#021A14] p-5 text-white shadow-pop sm:p-6">
+      {/* Yaşayan gradyan ışıması */}
+      <div
+        aria-hidden="true"
+        className="animate-gradient-pan pointer-events-none absolute -inset-x-12 -top-28 h-72 blur-3xl"
+        style={{
+          backgroundImage: "linear-gradient(110deg, #10B981, #0EA5A0 35%, #C9A227 70%, #10B981)",
+          backgroundSize: "220% 220%",
+          opacity: 0.22,
+        }}
+      />
+      <div className="grain-layer" aria-hidden="true" />
+
+      {/* Sağ üst haç filigranı + eş merkezli halkalar */}
+      <div className="pointer-events-none absolute -right-10 -top-12 h-52 w-52 opacity-[0.14]">
         <svg viewBox="0 0 48 48" className="h-full w-full" aria-hidden="true">
           <rect x="19" y="3" width="10" height="42" rx="5" fill="#fff" />
           <rect x="3" y="19" width="42" height="10" rx="5" fill="#fff" />
         </svg>
       </div>
-      <div className="pointer-events-none absolute -bottom-20 -left-12 h-48 w-48 rounded-full bg-[#10B981]/25 blur-3xl" />
+      <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full border border-white/10" />
+      <div className="pointer-events-none absolute -right-6 top-1 h-40 w-40 rounded-full border border-white/[0.07]" />
+      <div className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-[#10B981]/25 blur-3xl" />
 
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/95 shadow-lg ring-1 ring-white/40">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-lg ring-1 ring-white/50">
             <Logo size={40} glow={false} />
           </span>
           <div className="min-w-0">
-            <p className="text-[10.5px] font-bold uppercase tracking-[0.22em] text-emerald-200/80">
+            <p className="text-[10.5px] font-bold uppercase tracking-[0.24em] text-emerald-200/80">
               {BRAND.tagline}
             </p>
             <h2 className="mt-1 truncate text-xl font-extrabold leading-tight sm:text-2xl">
               {BRAND.name} <span className="font-semibold text-emerald-200">{BRAND.suffix}</span>
             </h2>
-            <span className="mt-2 block h-[3px] w-14 rounded-full bg-gradient-to-r from-[#12D98C] to-[#F0D07A]" />
+            <span className="mt-2 block h-[3px] w-16 rounded-full bg-gradient-to-r from-[#12D98C] via-[#34D399] to-[#F0D07A]" />
           </div>
         </div>
 
@@ -40,7 +55,7 @@ export function BrandBanner() {
           {CHIPS.map(({ icon: Icon, label }) => (
             <span
               key={label}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-white/90 ring-1 ring-white/15 backdrop-blur"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-white/90 ring-1 ring-inset ring-white/5 backdrop-blur"
             >
               <Icon className="h-3.5 w-3.5" />
               {label}

@@ -30,7 +30,7 @@ export function Sidebar({ collapsed, onToggle, view, ledgerType, onNavigate }: S
   return (
     <aside
       className={cn(
-        "no-print fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-line bg-surface transition-[width] duration-300 lg:flex",
+        "no-print glass fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-line transition-[width] duration-300 lg:flex",
         collapsed ? "w-[76px]" : "w-[264px]",
       )}
     >
@@ -62,7 +62,9 @@ export function Sidebar({ collapsed, onToggle, view, ledgerType, onNavigate }: S
               title={collapsed ? item.label : undefined}
               className={cn(
                 "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.98]",
-                active ? "bg-brand-50 text-brand dark:bg-brand/15 dark:text-brand-100" : "text-muted hover:bg-surface-2 hover:text-ink",
+                active
+                  ? "bg-gradient-to-r from-brand-50 to-brand-50/30 text-brand ring-1 ring-inset ring-brand/15 dark:from-brand/15 dark:to-brand/5 dark:text-brand-100"
+                  : "text-muted hover:bg-surface-2 hover:text-ink",
                 collapsed && "justify-center px-0",
               )}
             >
@@ -94,7 +96,7 @@ export function Sidebar({ collapsed, onToggle, view, ledgerType, onNavigate }: S
       <div className="space-y-2 border-t border-line p-3">
         {!collapsed ? (
           <>
-            <div className="rounded-xl bg-gradient-to-br from-brand-50 to-surface-2 p-3 dark:from-brand/15 dark:to-surface-2">
+            <div className="rounded-xl bg-gradient-to-br from-brand-50 to-surface-2 p-3 ring-1 ring-inset ring-brand/10 dark:from-brand/15 dark:to-surface-2">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Net Bakiye</p>
               <p
                 className={cn(

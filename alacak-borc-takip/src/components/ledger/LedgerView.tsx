@@ -104,6 +104,17 @@ export function LedgerView({
     return { receivable, payable };
   }, [filtered]);
 
+  // Listelenen sıraya göre koşan net bakiye (alacak +, borç −).
+  const runningBalance = useMemo(() => {
+    const map = new Map<string, number>();
+    let acc = 0;
+    for (const r of filtered) {
+      acc += r.tx.type === "receivable" ? r.remaining : -r.remaining;
+      map.set(r.tx.id, acc);
+    }
+    return map;
+  }, [filtered]);
+
   const isFiltered =
     type !== "all" ||
     filters.status !== "all" ||
@@ -210,7 +221,12 @@ export function LedgerView({
       ) : (
         <>
           <div className="hidden card overflow-hidden lg:block">
-            <TransactionTable rows={filtered} displayCurrency={displayCurrency} actions={actions} />
+            <TransactionTable
+              rows={filtered}
+              displayCurrency={displayCurrency}
+              runningBalance={runningBalance}
+              actions={actions}
+            />
           </div>
           <div className="space-y-3 lg:hidden">
             {filtered.map((row: LedgerRow) => (
@@ -218,6 +234,7 @@ export function LedgerView({
                 key={row.tx.id}
                 row={row}
                 displayCurrency={displayCurrency}
+                runningBalance={runningBalance}
                 actions={actions}
               />
             ))}

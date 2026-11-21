@@ -93,7 +93,7 @@ export function TopHeader({
     <header className="no-print safe-top glass sticky top-0 z-30 border-b border-line">
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand/30 to-transparent"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-brand/25 to-transparent dark:via-gold/35"
       />
       {/* Mobil marka letterhead */}
       <div className="flex flex-col items-center gap-1.5 px-4 pb-2.5 pt-3 lg:hidden">

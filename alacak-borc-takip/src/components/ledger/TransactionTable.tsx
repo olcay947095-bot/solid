@@ -1,6 +1,6 @@
 import type { Currency, LedgerRow, Transaction } from "@/types";
 import { dueLabel, formatCurrency, formatDate } from "@/lib/format";
-import { progressRatio } from "@/lib/ledger";
+import { progressRatio, dueSeverity } from "@/lib/ledger";
 import { currencySymbol, cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -28,21 +28,24 @@ function progressTone(status: LedgerRow["status"]) {
 export function TransactionTable({
   rows,
   displayCurrency,
+  runningBalance,
   actions,
 }: {
   rows: LedgerRow[];
   displayCurrency: Currency;
+  runningBalance: Map<string, number>;
   actions: RowActionsProps;
 }) {
   return (
     <div className="hidden overflow-x-auto lg:block">
-      <table className="w-full min-w-[880px] border-collapse">
+      <table className="w-full min-w-[1000px] border-collapse">
         <thead>
           <tr className="text-left">
             <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-faint">Kişi / Firma</th>
             <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-faint">Tür</th>
             <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-faint">Vade</th>
             <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wide text-faint">Tutar</th>
+            <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wide text-faint">Bakiye</th>
             <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-faint">Tahsil / Ödeme</th>
             <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-wide text-faint">Durum</th>
             <th className="w-14 px-4 py-3" />
@@ -50,13 +53,18 @@ export function TransactionTable({
         </thead>
         <tbody>
           {rows.map((r) => {
-            const overdue = r.status === "overdue";
+            const severity = dueSeverity(r.nextDueDate, r.status);
             const ratio = progressRatio(r.tx);
+            const balance = runningBalance.get(r.tx.id) ?? 0;
             return (
               <tr
                 key={r.tx.id}
                 onClick={() => actions.onDetail(r.tx)}
-                className="cursor-pointer border-t border-line transition-colors hover:bg-surface-2"
+                className={cn(
+                  "cursor-pointer border-t border-line transition-colors hover:bg-surface-2",
+                  severity === "overdue" && "bg-payable-soft/50 dark:bg-payable-softdark/40",
+                  severity === "soon" && "bg-amber-soft/50 dark:bg-amber-softdark/40",
+                )}
               >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -72,7 +80,16 @@ export function TransactionTable({
                 </td>
                 <td className="px-4 py-3">
                   <p className="tnum text-[13px] font-semibold text-ink">{formatDate(r.nextDueDate)}</p>
-                  <p className={cn("text-[11px]", overdue ? "font-semibold text-payable" : "text-muted")}>
+                  <p
+                    className={cn(
+                      "text-[11px]",
+                      severity === "overdue"
+                        ? "font-semibold text-payable"
+                        : severity === "soon"
+                          ? "font-semibold text-amber"
+                          : "text-muted",
+                    )}
+                  >
                     {r.status === "paid" ? "Tamamlandı" : dueLabel(r.nextDueDate)}
                   </p>
                 </td>
@@ -87,6 +104,17 @@ export function TransactionTable({
                     </p>
                   ) : null}
                 </td>
+                <td className="px-4 py-3 text-right">
+                  <p
+                    className={cn(
+                      "tnum text-[13px] font-bold",
+                      balance >= 0 ? "text-receivable" : "text-payable",
+                    )}
+                  >
+                    {formatCurrency(balance, displayCurrency)}
+                  </p>
+                  <p className="text-[11px] text-faint">{balance >= 0 ? "net alacak" : "net borç"}</p>
+                </td>
                 <td className="px-4 py-3">
                   <div className="w-[140px]">
                     <ProgressBar value={ratio} tone={progressTone(r.status)} height="h-1.5" />
@@ -94,7 +122,7 @@ export function TransactionTable({
                       <span className="tnum font-semibold text-muted">
                         {formatCurrency(r.paid, displayCurrency)}
                       </span>
-                      <span className={cn("tnum font-semibold", overdue ? "text-payable" : "text-faint")}>
+                      <span className={cn("tnum font-semibold", severity === "overdue" ? "text-payable" : "text-faint")}>
                         {Math.round(ratio * 100)}%
                       </span>
                     </div>

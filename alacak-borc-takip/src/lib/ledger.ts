@@ -1,5 +1,5 @@
 import type { Currency, LedgerRow, Transaction, TxStatus, TxType } from "@/types";
-import { todayISO } from "@/lib/format";
+import { diffDays, todayISO } from "@/lib/format";
 
 /** İşlem türü insan okunur etiketleri. */
 export const TX_TYPE_LABEL: Record<TxType, string> = {
@@ -38,6 +38,17 @@ export function deriveStatus(tx: Transaction): TxStatus {
   if (nextDueDate(tx) < todayISO()) return "overdue";
   if (totalPaid(tx) > 0.01) return "partial";
   return "pending";
+}
+
+/** Vade yakınlık kademesi — gecikmiş / vade yakın / normal. */
+export type DueSeverity = "overdue" | "soon" | "normal";
+
+/** Ödenmemiş kaydın vadesini kademelendirir (<=7 gün "vade yakın"). */
+export function dueSeverity(nextDue: string, status: TxStatus): DueSeverity {
+  if (status === "paid") return "normal";
+  const days = diffDays(todayISO(), nextDue);
+  if (days < 0) return "overdue";
+  return days <= 7 ? "soon" : "normal";
 }
 
 /** Ödenmemiş ilk taksitin vadesi; yoksa kaydın vadesi. */

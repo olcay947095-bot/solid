@@ -59,8 +59,9 @@
   --hairline: linear-gradient(
     150deg,
     rgb(var(--c-border)) 0%,
-    rgb(var(--c-border) / 0.5) 55%,
-    rgb(var(--c-brand) / 0.4) 100%
+    rgb(var(--c-border) / 0.5) 46%,
+    rgb(var(--c-brand) / 0.34) 72%,
+    rgb(201 162 39 / 0.44) 100%
   );
   color-scheme: dark;
 }
@@ -234,6 +235,12 @@
     background: rgb(var(--c-surface) / 0.72);
     backdrop-filter: blur(22px) saturate(165%);
     -webkit-backdrop-filter: blur(22px) saturate(165%);
+  }
+  /* Elite gece — koyu modda daha derin ve doygun cam */
+  .dark .glass {
+    background: rgb(var(--c-surface) / 0.62);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
   }
 
   /* Elite kart — gradyan saç teli kenarlık + hafif iç parlaklık */

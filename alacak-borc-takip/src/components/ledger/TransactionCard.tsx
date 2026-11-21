@@ -1,7 +1,7 @@
 import { CircleDollarSign, MessageCircle } from "lucide-react";
 import type { Currency, LedgerRow } from "@/types";
 import { diffDays, dueLabel, formatCurrency, todayISO } from "@/lib/format";
-import { progressRatio } from "@/lib/ledger";
+import { dueSeverity, progressRatio, type DueSeverity } from "@/lib/ledger";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/Avatar";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -9,33 +9,42 @@ import { StatusBadge, TypeBadge } from "@/components/ui/StatusBadge";
 import { RowActions } from "@/components/ledger/RowActions";
 import type { RowActionsProps } from "@/components/ledger/TransactionTable";
 
-const ACCENT: Record<LedgerRow["status"], string> = {
-  paid: "bg-receivable",
+/** Vade rampası — kartın sol şerit rengi. */
+const STRIP: Record<DueSeverity, string> = {
   overdue: "bg-payable",
-  partial: "bg-amber",
-  pending: "bg-brand",
+  soon: "bg-amber",
+  normal: "bg-brand",
 };
 
 export function TransactionCard({
   row,
   displayCurrency,
+  runningBalance,
   actions,
 }: {
   row: LedgerRow;
   displayCurrency: Currency;
+  runningBalance: Map<string, number>;
   actions: RowActionsProps;
 }) {
   const { tx } = row;
   const ratio = progressRatio(tx);
+  const balance = runningBalance.get(tx.id) ?? 0;
   const daysLeft = diffDays(todayISO(), row.nextDueDate);
   const showReminder = tx.type === "receivable" && row.remaining > 0 && daysLeft <= 10;
+  const severity = dueSeverity(row.nextDueDate, row.status);
+  const strip = row.status === "paid" ? "bg-receivable" : STRIP[severity];
 
   return (
     <div
       onClick={() => actions.onDetail(tx)}
-      className="card relative cursor-pointer overflow-hidden p-4 transition-transform active:scale-[0.99]"
+      className={cn(
+        "card relative cursor-pointer overflow-hidden p-4 transition-transform active:scale-[0.99]",
+        severity === "overdue" && "bg-payable-soft/40 dark:bg-payable-softdark/30",
+        severity === "soon" && "bg-amber-soft/40 dark:bg-amber-softdark/30",
+      )}
     >
-      <span className={cn("absolute inset-y-0 left-0 w-1", ACCENT[row.status])} />
+      <span className={cn("absolute inset-y-0 left-0 w-1", strip)} />
 
       <div className="flex items-start gap-3 pl-1.5">
         <Avatar name={tx.contactName} size="md" />
@@ -73,13 +82,23 @@ export function TransactionCard({
           <p className="tnum mt-0.5 text-[11px] text-faint">
             Toplam {formatCurrency(row.total, displayCurrency)}
           </p>
+          <p className="mt-0.5 text-[11px] text-faint">
+            Koşan bakiye{" "}
+            <span className={cn("tnum font-semibold", balance >= 0 ? "text-receivable" : "text-payable")}>
+              {formatCurrency(balance, displayCurrency)}
+            </span>
+          </p>
         </div>
         <div className="flex flex-col items-end gap-1">
           <StatusBadge status={row.status} />
           <span
             className={cn(
               "text-[11px] font-medium",
-              row.status === "overdue" ? "font-semibold text-payable" : "text-muted",
+              severity === "overdue"
+                ? "font-semibold text-payable"
+                : severity === "soon"
+                  ? "font-semibold text-amber"
+                  : "text-muted",
             )}
           >
             {row.status === "paid" ? "Tamamlandı" : dueLabel(row.nextDueDate)}

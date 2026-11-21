@@ -63,7 +63,7 @@ export function Sidebar({ collapsed, onToggle, view, ledgerType, onNavigate }: S
               className={cn(
                 "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-150 active:scale-[0.98]",
                 active
-                  ? "bg-gradient-to-r from-brand-50 to-brand-50/30 text-brand ring-1 ring-inset ring-brand/15 dark:from-brand/15 dark:to-brand/5 dark:text-brand-100"
+                  ? "bg-surface-2 text-ink ring-1 ring-inset ring-line"
                   : "text-muted hover:bg-surface-2 hover:text-ink",
                 collapsed && "justify-center px-0",
               )}
@@ -76,12 +76,7 @@ export function Sidebar({ collapsed, onToggle, view, ledgerType, onNavigate }: S
                 <>
                   <span className="flex-1 truncate text-left">{item.label}</span>
                   {count ? (
-                    <span
-                      className={cn(
-                        "rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums",
-                        active ? "bg-brand text-white" : "bg-surface-3 text-muted",
-                      )}
-                    >
+                    <span className={cn("rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums", active ? "bg-surface-3 text-ink" : "bg-surface-3 text-muted")}>
                       {count}
                     </span>
                   ) : null}
@@ -96,7 +91,7 @@ export function Sidebar({ collapsed, onToggle, view, ledgerType, onNavigate }: S
       <div className="space-y-2 border-t border-line p-3">
         {!collapsed ? (
           <>
-            <div className="rounded-xl bg-gradient-to-br from-brand-50 to-surface-2 p-3 ring-1 ring-inset ring-brand/10 dark:from-brand/15 dark:to-surface-2">
+            <div className="rounded-xl bg-surface-2 p-3 ring-1 ring-inset ring-line">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Net Bakiye</p>
               <p
                 className={cn(

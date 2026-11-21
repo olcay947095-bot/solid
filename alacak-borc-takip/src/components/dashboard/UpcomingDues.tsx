@@ -1,9 +1,8 @@
 import { CalendarClock, ChevronRight } from "lucide-react";
 import type { Transaction } from "@/types";
 import { useLedger } from "@/store/LedgerProvider";
-import { buildRow } from "@/lib/ledger";
+import { buildRow, dueSeverity } from "@/lib/ledger";
 import { dueLabel, formatCurrency } from "@/lib/format";
-import { diffDays, todayISO } from "@/lib/format";
 import { Avatar } from "@/components/ui/Avatar";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -48,9 +47,8 @@ export function UpcomingDues({
           />
         ) : (
           upcoming.map((r) => {
-            const days = diffDays(todayISO(), r.nextDueDate);
             const row = buildRow(r.tx, displayCurrency);
-            const tone = days < 0 ? "overdue" : days <= 7 ? "soon" : "later";
+            const severity = dueSeverity(r.nextDueDate, r.status);
             return (
               <button
                 key={r.tx.id}
@@ -75,9 +73,9 @@ export function UpcomingDues({
                   <span
                     className={cn(
                       "mt-0.5 inline-block rounded-md px-1.5 py-0.5 text-[10px] font-bold",
-                      tone === "overdue" && "bg-payable-soft text-payable dark:bg-payable-softdark",
-                      tone === "soon" && "bg-amber-soft text-amber dark:bg-amber-softdark",
-                      tone === "later" && "bg-surface-2 text-muted",
+                      severity === "overdue" && "bg-payable-soft text-payable dark:bg-payable-softdark",
+                      severity === "soon" && "bg-amber-soft text-amber dark:bg-amber-softdark",
+                      severity === "normal" && "bg-surface-2 text-muted",
                     )}
                   >
                     {dueLabel(r.nextDueDate)}

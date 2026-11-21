@@ -140,7 +140,7 @@ export function ReportsView() {
       {/* Filtre + Dışa aktarma */}
       <Card>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-1 flex-wrap items-end gap-3">
+          <div className="flex w-full flex-1 flex-wrap items-end gap-3">
             <div>
               <p className="mb-1.5 text-[13px] font-semibold text-ink">Tür</p>
               <Segmented options={TYPE_OPTIONS} value={type} onChange={setType} size="sm" />
@@ -150,7 +150,7 @@ export function ReportsView() {
               <Segmented options={SCOPE_OPTIONS} value={scope} onChange={setScope} size="sm" />
             </div>
             {scope === "contact" ? (
-              <Field label="Cari" className="w-[190px]">
+              <Field label="Cari" className="w-full sm:w-[190px]">
                 <Select value={activeContact} onChange={(e) => setContact(e.target.value)}>
                   {contacts.length === 0 ? <option value="">Kayıtlı cari yok</option> : null}
                   {contacts.map((c) => (
@@ -161,21 +161,22 @@ export function ReportsView() {
                 </Select>
               </Field>
             ) : null}
-            <Field label="Başlangıç" className="w-[150px]">
+            <Field label="Başlangıç" className="w-[calc(50%_-_0.375rem)] sm:w-[150px]">
               <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
             </Field>
-            <Field label="Bitiş" className="w-[150px]">
+            <Field label="Bitiş" className="w-[calc(50%_-_0.375rem)] sm:w-[150px]">
               <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
             </Field>
-            <Field label="Para Birimi" className="w-[130px]">
+            <Field label="Para Birimi" className="w-[calc(50%_-_0.375rem)] sm:w-[130px]">
               <Select value={displayCurrency} disabled>
                 <option value={displayCurrency}>{displayCurrency}</option>
               </Select>
             </Field>
           </div>
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex w-full flex-wrap gap-2.5 sm:w-auto">
             <Button
               variant="secondary"
+              className="flex-1 sm:flex-none"
               leftIcon={<FileText className="h-4 w-4" />}
               onClick={() => handleExport("csv")}
             >
@@ -183,6 +184,7 @@ export function ReportsView() {
             </Button>
             <Button
               variant="secondary"
+              className="flex-1 sm:flex-none"
               leftIcon={<FileSpreadsheet className="h-4 w-4" />}
               onClick={() => handleExport("excel")}
             >
@@ -190,6 +192,7 @@ export function ReportsView() {
             </Button>
             <Button
               variant="primary"
+              className="flex-1 sm:flex-none"
               leftIcon={<Printer className="h-4 w-4" />}
               rightIcon={<Download className="h-4 w-4 opacity-70" />}
               onClick={handlePdf}

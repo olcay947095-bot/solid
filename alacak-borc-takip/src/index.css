@@ -100,6 +100,16 @@
   button {
     font: inherit;
   }
+  /* iOS Safari, yazı boyutu 16px'in altındaki bir alana odaklanınca
+     sayfayı kendiliğinden yakınlaştırır. Dokunmatik cihazlarda form
+     alanlarını 16px'te tutarak bu istenmeyen zoom'u engelle. */
+  @media (pointer: coarse) {
+    input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
 }
 
 @layer components {
@@ -122,6 +132,11 @@
     scrollbar-width: none;
   }
 
+  /* iPhone çentik / Dynamic Island ve alt çubuk için güvenli alanlar
+     (viewport-fit=cover ile birlikte çalışır). */
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }

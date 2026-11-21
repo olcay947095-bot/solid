@@ -65,7 +65,9 @@ function KpiCard({
         ) : null}
       </div>
       <p className="relative mt-4 text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className={cn("tnum relative mt-1 text-[22px] font-extrabold leading-tight", t.value)}>{value}</p>
+      <p className={cn("tnum relative mt-1 truncate text-[19px] font-extrabold leading-tight sm:text-[22px]", t.value)}>
+        {value}
+      </p>
       <div className="relative mt-1.5 text-xs text-muted">{footer}</div>
     </div>
   );

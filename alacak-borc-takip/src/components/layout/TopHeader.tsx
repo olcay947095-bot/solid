@@ -88,7 +88,7 @@ export function TopHeader({
   const { displayCurrency, setDisplayCurrency } = useLedger();
 
   return (
-    <header className="no-print sticky top-0 z-30 border-b border-line bg-bg/70 backdrop-blur-xl">
+    <header className="no-print safe-top sticky top-0 z-30 border-b border-line bg-bg/70 backdrop-blur-xl">
       {/* Mobil üst satır */}
       <div className="flex items-center gap-3 px-4 pt-3 lg:hidden">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand text-white shadow-sm">

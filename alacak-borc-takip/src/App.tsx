@@ -148,7 +148,7 @@ export function App() {
             onOpenSettings={() => setSettingsOpen(true)}
           />
 
-          <main className="mx-auto w-full max-w-[1440px] px-4 pb-28 pt-5 lg:px-6 lg:pb-12">
+          <main className="mx-auto w-full max-w-[1440px] px-4 pb-[calc(7rem+env(safe-area-inset-bottom,0px))] pt-5 lg:px-6 lg:pb-12">
             <div key={view} className="animate-fade-in">
               {view === "dashboard" ? (
                 <DashboardView

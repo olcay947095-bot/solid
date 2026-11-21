@@ -16,16 +16,16 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/utils";
 
 const PALETTE = [
-  "#4F46E5",
+  "#059669",
   "#10B981",
-  "#EF4444",
-  "#F59E0B",
   "#0EA5E9",
+  "#F59E0B",
   "#8B5CF6",
-  "#EC4899",
+  "#EF4444",
   "#14B8A6",
-  "#F97316",
   "#84CC16",
+  "#F97316",
+  "#EC4899",
 ];
 
 const TYPE_OPTIONS = [

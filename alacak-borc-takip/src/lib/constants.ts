@@ -2,9 +2,9 @@ import type { AccentId, TxStatus, WallpaperId } from "@/types";
 
 /** Kurumsal marka kimliği — Eczane. */
 export const BRAND = {
-  name: "SERHAT ALTINDA",
+  name: "SERHAT",
   suffix: "Eczanesi",
-  full: "SERHAT ALTINDA Eczanesi",
+  full: "Serhat Eczanesi",
   tagline: "Alacak & Borç Takip",
 } as const;
 

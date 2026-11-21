@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Inbox, SearchX } from "lucide-react";
+import type { ReactNode } from "react";
+import { ArrowDownRight, ArrowUpRight, Inbox, ListChecks, Scale, SearchX } from "lucide-react";
 import type { Filters, LedgerRow, TxStatus, TxType } from "@/types";
-import type { SortOption } from "@/lib/constants";
+import { STATUS_META, type SortOption } from "@/lib/constants";
 import { useLedger } from "@/store/LedgerProvider";
+import { useToast } from "@/store/ToastProvider";
+import { exportReportPdf } from "@/lib/report";
 import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -19,6 +23,12 @@ const DEFAULT_FILTERS: Filters = {
   to: "",
   search: "",
   category: "all",
+};
+
+const TYPE_LABEL: Record<"all" | TxType, string> = {
+  all: "Tümü",
+  receivable: "Alacaklar",
+  payable: "Borçlar",
 };
 
 export function LedgerView({
@@ -37,6 +47,7 @@ export function LedgerView({
   presetStatus?: TxStatus | "all";
 }) {
   const { rows, transactions, displayCurrency, loading } = useLedger();
+  const toast = useToast();
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [sort, setSort] = useState<SortOption>("due-asc");
 
@@ -101,6 +112,30 @@ export function LedgerView({
     !!filters.to ||
     !!search.trim();
 
+  const trimmedSearch = search.trim();
+  const handlePdf = () => {
+    if (filtered.length === 0) {
+      toast.warning("Raporlanacak kayıt yok", "Lütfen filtreleri değiştirin.");
+      return;
+    }
+    const ok = exportReportPdf({
+      rows: filtered,
+      scope: "all",
+      from: filters.from,
+      to: filters.to,
+      typeLabel: TYPE_LABEL[type],
+      statusLabel: filters.status !== "all" ? STATUS_META[filters.status].label : undefined,
+      categoryLabel: filters.category !== "all" ? filters.category : undefined,
+      searchLabel: trimmedSearch || undefined,
+      displayCurrency,
+    });
+    if (ok) {
+      toast.success("Rapor hazırlandı", "Açılan pencereden “PDF olarak kaydet” seçebilirsiniz.");
+    } else {
+      toast.error("Pencere açılamadı", "Tarayıcınız açılır pencereyi engellemiş olabilir.");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <LedgerFilters
@@ -115,18 +150,35 @@ export function LedgerView({
         sort={sort}
         onSortChange={setSort}
         resultCount={filtered.length}
+        onExportPdf={handlePdf}
       />
 
       {/* Özet şeritleri */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <SummaryTile label="Listelenen Alacak" value={formatCurrency(summary.receivable, displayCurrency)} tone="success" />
-        <SummaryTile label="Listelenen Borç" value={formatCurrency(summary.payable, displayCurrency)} tone="danger" />
+        <SummaryTile
+          label="Listelenen Alacak"
+          value={formatCurrency(summary.receivable, displayCurrency)}
+          tone="success"
+          icon={<ArrowDownRight className="h-4 w-4" />}
+        />
+        <SummaryTile
+          label="Listelenen Borç"
+          value={formatCurrency(summary.payable, displayCurrency)}
+          tone="danger"
+          icon={<ArrowUpRight className="h-4 w-4" />}
+        />
         <SummaryTile
           label="Net (Liste)"
           value={formatCurrency(summary.receivable - summary.payable, displayCurrency)}
           tone="brand"
+          icon={<Scale className="h-4 w-4" />}
         />
-        <SummaryTile label="Kayıt Sayısı" value={String(filtered.length)} tone="neutral" />
+        <SummaryTile
+          label="Kayıt Sayısı"
+          value={String(filtered.length)}
+          tone="neutral"
+          icon={<ListChecks className="h-4 w-4" />}
+        />
       </div>
 
       {/* Liste */}
@@ -189,23 +241,40 @@ function SummaryTile({
   label,
   value,
   tone,
+  icon,
 }: {
   label: string;
   value: string;
   tone: "success" | "danger" | "brand" | "neutral";
+  icon: ReactNode;
 }) {
-  const color =
-    tone === "success"
-      ? "text-receivable"
-      : tone === "danger"
-        ? "text-payable"
-        : tone === "brand"
-          ? "text-brand"
-          : "text-ink";
+  const styles = {
+    success: {
+      color: "text-receivable",
+      chip: "bg-receivable-soft text-receivable dark:bg-receivable-softdark dark:text-receivable",
+    },
+    danger: {
+      color: "text-payable",
+      chip: "bg-payable-soft text-payable dark:bg-payable-softdark dark:text-payable",
+    },
+    brand: {
+      color: "text-brand",
+      chip: "bg-brand-50 text-brand dark:bg-brand/15 dark:text-brand-100",
+    },
+    neutral: {
+      color: "text-ink",
+      chip: "bg-surface-2 text-muted",
+    },
+  }[tone];
   return (
-    <div className="card px-4 py-3">
-      <p className="truncate text-[11px] font-semibold text-muted">{label}</p>
-      <p className={`tnum mt-1 truncate text-base font-extrabold ${color}`}>{value}</p>
+    <div className="card relative overflow-hidden px-4 py-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="truncate text-[11px] font-semibold text-muted">{label}</p>
+        <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", styles.chip)}>
+          {icon}
+        </span>
+      </div>
+      <p className={cn("tnum mt-1 truncate text-base font-extrabold", styles.color)}>{value}</p>
     </div>
   );
 }

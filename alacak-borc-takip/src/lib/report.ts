@@ -13,6 +13,12 @@ export interface ReportOptions {
   to?: string;
   typeLabel: string;
   displayCurrency: Currency;
+  /** Aktif durum filtresi (ör. "Bekliyor"). Boşsa rapora eklenmez. */
+  statusLabel?: string;
+  /** Aktif kategori filtresi. Boşsa rapora eklenmez. */
+  categoryLabel?: string;
+  /** Aktif serbest arama terimi. Boşsa rapora eklenmez. */
+  searchLabel?: string;
 }
 
 function escapeHtml(value: string): string {
@@ -37,16 +43,17 @@ const STATUS_COLORS: Record<string, string> = {
   pending: "#059669",
 };
 
-/** Rapor letterhead'inde kullanılan eczane haç logosu (SVG). */
-const LOGO_SVG = `<svg viewBox="0 0 48 48" width="26" height="26" aria-hidden="true">
-      <rect x="19" y="8" width="10" height="32" rx="5" fill="#fff" />
-      <rect x="8" y="19" width="32" height="10" rx="5" fill="#fff" />
-      <circle cx="41.5" cy="6.5" r="3.6" fill="#F0D07A" />
+/** Rapor letterhead'inde kullanılan eczane logosu — "S" harfi ve sağlık haçı. */
+const LOGO_SVG = `<svg viewBox="0 0 48 48" width="27" height="27" aria-hidden="true">
+      <path d="M32.5 19.7c0-4.7-17-4.7-17 1.5s17 3.4 17 9.6-17 6.2-17 1.5" fill="none" stroke="#fff" stroke-width="6.8" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="36.5" cy="12" r="6.9" fill="#fff" />
+      <rect x="34" y="7.5" width="5" height="9" rx="2.5" fill="#059669" />
+      <rect x="32" y="9.5" width="9" height="5" rx="2.5" fill="#059669" />
     </svg>`;
 
 /** Yazdırılabilir, markalı rapor HTML'i üretir. */
 export function buildReportHtml(opts: ReportOptions): string {
-  const { rows, scope, contact, from, to, typeLabel, displayCurrency } = opts;
+  const { rows, scope, contact, from, to, typeLabel, displayCurrency, statusLabel, categoryLabel, searchLabel } = opts;
 
   let receivable = 0;
   let payable = 0;
@@ -59,6 +66,25 @@ export function buildReportHtml(opts: ReportOptions): string {
   const net = receivable - payable;
 
   const scopeLabel = scope === "contact" ? `Cari: ${contact ?? "-"}` : "Tüm Kayıtlar";
+
+  const metaItems: { k: string; v: string }[] = [
+    { k: "Kapsam", v: scopeLabel },
+    { k: "İşlem Türü", v: typeLabel },
+  ];
+  if (statusLabel) metaItems.push({ k: "Durum", v: statusLabel });
+  if (categoryLabel) metaItems.push({ k: "Kategori", v: categoryLabel });
+  if (searchLabel) metaItems.push({ k: "Arama", v: `“${searchLabel}”` });
+  metaItems.push({ k: "Vade Aralığı", v: dateRangeLabel(from, to) });
+  metaItems.push({ k: "Oluşturma", v: formatDateLong(todayISO()) });
+
+  const metaHtml = metaItems
+    .map(
+      (item) =>
+        `<div class="item"><div class="k">${escapeHtml(item.k)}</div><div class="v">${escapeHtml(
+          item.v,
+        )}</div></div>`,
+    )
+    .join("");
 
   const bodyRows = rows
     .map((row) => {
@@ -99,7 +125,7 @@ export function buildReportHtml(opts: ReportOptions): string {
   .brand { display: flex; align-items: center; gap: 14px; }
   .logo {
     width: 46px; height: 46px; border-radius: 14px; flex: none;
-    background: linear-gradient(135deg, #12B981, #059669 55%, #047857);
+    background: linear-gradient(135deg, #12D98C, #059669 55%, #036B52);
     display: flex; align-items: center; justify-content: center;
   }
   .name { font-size: 16px; margin: 0; font-weight: 800; letter-spacing: 0.02em; }
@@ -146,12 +172,7 @@ export function buildReportHtml(opts: ReportOptions): string {
 
   <div class="rule"></div>
 
-  <div class="meta">
-    <div class="item"><div class="k">Kapsam</div><div class="v">${escapeHtml(scopeLabel)}</div></div>
-    <div class="item"><div class="k">İşlem Türü</div><div class="v">${escapeHtml(typeLabel)}</div></div>
-    <div class="item"><div class="k">Vade Aralığı</div><div class="v">${escapeHtml(dateRangeLabel(from, to))}</div></div>
-    <div class="item"><div class="k">Oluşturma</div><div class="v">${escapeHtml(formatDateLong(todayISO()))}</div></div>
-  </div>
+  <div class="meta">${metaHtml}</div>
 
   <div class="tiles">
     <div class="tile"><div class="k">Alacak (Kalan)</div><div class="v" style="color:#059669">${escapeHtml(

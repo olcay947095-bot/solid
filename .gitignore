@@ -3,6 +3,9 @@ dist/
 lib/
 # ...but an example's source tree may legitimately have one (src/lib/api.ts).
 !examples/*/src/lib/
+# ...and so may a standalone app under the repo (alacak-borc-takip/src/lib, src/types).
+!alacak-borc-takip/src/lib/
+!alacak-borc-takip/src/types/
 coverage/
 types/
 types-cjs/

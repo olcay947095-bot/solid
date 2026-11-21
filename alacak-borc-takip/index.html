@@ -3,13 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#4F46E5" />
-    <meta name="description" content="Alacak ve Borç Takip — alacaklarınızı, borçlarınızı ve carilerinizi tek panelden yönetin." />
+    <meta name="theme-color" content="#059669" />
+    <meta name="description" content="SERHAT ALTINDA Eczanesi — alacak, borç ve cari takip paneli." />
     <!-- iOS ana ekrana ekleme (standalone) desteği -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Alacak Borç" />
+    <meta name="apple-mobile-web-app-title" content="Serhat Altında" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -19,9 +19,9 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap"
       rel="stylesheet"
     />
-    <title>Alacak &amp; Borç Takip</title>
+    <title>SERHAT ALTINDA Eczanesi</title>
     <script>
-      // Tema, ilk boyamadan önce uygulanır (FOUC engelleme)
+      // Tema ve aksan, ilk boyamadan önce uygulanır (FOUC engelleme)
       (function () {
         try {
           var stored = localStorage.getItem("abt.theme");
@@ -29,6 +29,11 @@
           var theme = stored || (prefersDark ? "dark" : "light");
           if (theme === "dark") document.documentElement.classList.add("dark");
           document.documentElement.style.colorScheme = theme;
+
+          var allowed = ["green", "indigo", "emerald", "gold", "cyan"];
+          var accent = localStorage.getItem("abt.accent");
+          var resolved = accent && allowed.indexOf(accent) >= 0 ? accent : "green";
+          document.documentElement.classList.add("accent-" + resolved);
         } catch (e) {}
       })();
     </script>

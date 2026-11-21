@@ -7,22 +7,22 @@
  *  bg / surface / ink / line gibi sınıflar üzerinden tüketir.
  * ------------------------------------------------------------------ */
 :root {
-  --c-bg: 248 250 252; /* #F8FAFC soft slate */
+  --c-bg: 246 250 248; /* #F6FAF8 eczane beyazı (hafif yeşil) */
   --c-surface: 255 255 255; /* #FFFFFF cards */
-  --c-surface-2: 241 245 249; /* #F1F5F9 subtle fill */
-  --c-surface-3: 226 232 240; /* #E2E8F0 */
-  --c-border: 226 232 240; /* #E2E8F0 hairline */
+  --c-surface-2: 240 246 243; /* #F0F6F3 subtle fill */
+  --c-surface-3: 225 236 231; /* #E1ECE7 */
+  --c-border: 228 237 233; /* #E4EDE9 hairline */
   --c-ink: 15 23 42; /* #0F172A */
   --c-muted: 100 116 139; /* #64748B */
   --c-faint: 148 163 184; /* #94A3B8 */
 
-  /* Marka (aksan) — varsayılan Royal Indigo */
-  --c-brand: 79 70 229;
-  --c-brand-50: 238 242 255;
-  --c-brand-100: 224 231 255;
-  --c-brand-500: 99 102 241;
-  --c-brand-600: 79 70 229;
-  --c-brand-700: 67 56 202;
+  /* Marka (aksan) — varsayılan Eczane Yeşili */
+  --c-brand: 5 150 105;
+  --c-brand-50: 236 253 245;
+  --c-brand-100: 209 250 229;
+  --c-brand-500: 16 185 129;
+  --c-brand-600: 5 150 105;
+  --c-brand-700: 4 120 87;
 
   /* Duvar kağıdı yoğunluğu (0-1) */
   --wp-opacity: 0.55;
@@ -30,11 +30,11 @@
 }
 
 .dark {
-  --c-bg: 11 15 25; /* #0B0F19 obsidian */
-  --c-surface: 17 24 39; /* #111827 elevated card */
-  --c-surface-2: 30 41 59; /* #1E293B */
-  --c-surface-3: 51 65 85; /* #334155 */
-  --c-border: 41 51 71; /* #293347 */
+  --c-bg: 9 15 13; /* #090F0D obsidyen (hafif yeşil) */
+  --c-surface: 16 23 20; /* #101714 elevated card */
+  --c-surface-2: 26 36 32; /* #1A2420 */
+  --c-surface-3: 37 51 45; /* #25332D */
+  --c-border: 38 51 45; /* #26332D */
   --c-ink: 226 232 240; /* #E2E8F0 */
   --c-muted: 148 163 184; /* #94A3B8 */
   --c-faint: 100 116 139; /* #64748B */
@@ -44,6 +44,14 @@
 /* ------------------------------------------------------------------ *
  *  Premium aksan temaları — document.documentElement üzerine uygulanır.
  * ------------------------------------------------------------------ */
+.accent-green {
+  --c-brand: 5 150 105;
+  --c-brand-50: 236 253 245;
+  --c-brand-100: 209 250 229;
+  --c-brand-500: 16 185 129;
+  --c-brand-600: 5 150 105;
+  --c-brand-700: 4 120 87;
+}
 .accent-indigo {
   --c-brand: 79 70 229;
   --c-brand-50: 238 242 255;

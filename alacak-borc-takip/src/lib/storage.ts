@@ -8,7 +8,7 @@ const ACCENT_KEY = "abt.accent";
 const DEFAULT_SETTINGS: Settings = {
   theme: "light",
   displayCurrency: "TRY",
-  accent: "indigo",
+  accent: "green",
   wallpaper: "aurora",
   wallpaperAnimated: true,
   wallpaperIntensity: 60,
@@ -24,7 +24,7 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 const CURRENCIES: Currency[] = ["TRY", "USD", "EUR"];
-const ACCENTS: AccentId[] = ["indigo", "emerald", "gold", "cyan"];
+const ACCENTS: AccentId[] = ["green", "indigo", "emerald", "gold", "cyan"];
 const WALLPAPERS: WallpaperId[] = ["aurora", "mesh", "starfield", "grid", "solid"];
 
 function isCurrency(value: unknown): value is Currency {

@@ -1,5 +1,13 @@
 import type { AccentId, TxStatus, WallpaperId } from "@/types";
 
+/** Kurumsal marka kimliği — Eczane. */
+export const BRAND = {
+  name: "SERHAT ALTINDA",
+  suffix: "Eczanesi",
+  full: "SERHAT ALTINDA Eczanesi",
+  tagline: "Alacak & Borç Takip",
+} as const;
+
 /** Durum etiketleri ve rozet tonları. */
 export const STATUS_META: Record<
   TxStatus,
@@ -47,6 +55,7 @@ export const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 
 /** Marka aksan paletleri. `swatch` duvar kağıdı ve aksan seçicide kullanılır. */
 export const ACCENT_OPTIONS: { value: AccentId; label: string; swatch: string }[] = [
+  { value: "green", label: "Eczane Yeşili", swatch: "#059669" },
   { value: "indigo", label: "İndigo", swatch: "#4F46E5" },
   { value: "emerald", label: "Zümrüt", swatch: "#10B981" },
   { value: "gold", label: "Altın", swatch: "#C9A227" },

@@ -12,6 +12,7 @@ interface AnimatedBackgroundProps {
 
 /** Aksana göre aurora renk paleti (marka + uyumlu tonlar). */
 const PALETTES: Record<AccentId, [string, string, string]> = {
+  green: ["#059669", "#10B981", "#0EA5A0"],
   indigo: ["#4F46E5", "#7C3AED", "#0EA5E9"],
   emerald: ["#10B981", "#14B8A6", "#84CC16"],
   gold: ["#C9A227", "#E8C766", "#10B981"],
@@ -19,7 +20,7 @@ const PALETTES: Record<AccentId, [string, string, string]> = {
 };
 
 function brandHex(accent: AccentId): string {
-  return ACCENT_OPTIONS.find((a) => a.value === accent)?.swatch ?? "#4F46E5";
+  return ACCENT_OPTIONS.find((a) => a.value === accent)?.swatch ?? "#059669";
 }
 
 function hexToRgb(hex: string): [number, number, number] {

@@ -1,5 +1,5 @@
 import type { Currency, LedgerRow } from "@/types";
-import { STATUS_META } from "@/lib/constants";
+import { BRAND, STATUS_META } from "@/lib/constants";
 import { TX_TYPE_LABEL } from "@/lib/ledger";
 import { formatCurrency, formatDate, formatDateLong, todayISO } from "@/lib/format";
 
@@ -34,8 +34,15 @@ const STATUS_COLORS: Record<string, string> = {
   paid: "#10B981",
   overdue: "#EF4444",
   partial: "#F59E0B",
-  pending: "#4F46E5",
+  pending: "#059669",
 };
+
+/** Rapor letterhead'inde kullanılan eczane haç logosu (SVG). */
+const LOGO_SVG = `<svg viewBox="0 0 48 48" width="26" height="26" aria-hidden="true">
+      <rect x="19" y="8" width="10" height="32" rx="5" fill="#fff" />
+      <rect x="8" y="19" width="32" height="10" rx="5" fill="#fff" />
+      <circle cx="41.5" cy="6.5" r="3.6" fill="#F0D07A" />
+    </svg>`;
 
 /** Yazdırılabilir, markalı rapor HTML'i üretir. */
 export function buildReportHtml(opts: ReportOptions): string {
@@ -77,7 +84,7 @@ export function buildReportHtml(opts: ReportOptions): string {
 <html lang="tr">
 <head>
 <meta charset="utf-8" />
-<title>Alacak & Borç Raporu</title>
+<title>${escapeHtml(BRAND.full)} — Alacak &amp; Borç Raporu</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -89,16 +96,20 @@ export function buildReportHtml(opts: ReportOptions): string {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand { display: flex; align-items: center; gap: 14px; }
   .logo {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: linear-gradient(135deg, #4F46E5, #7C3AED);
-    color: #fff; display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 18px;
+    width: 46px; height: 46px; border-radius: 14px; flex: none;
+    background: linear-gradient(135deg, #12B981, #059669 55%, #047857);
+    display: flex; align-items: center; justify-content: center;
   }
-  h1 { font-size: 20px; margin: 0; font-weight: 800; }
+  .name { font-size: 16px; margin: 0; font-weight: 800; letter-spacing: 0.02em; }
+  .name .suffix { color: #059669; font-weight: 700; }
+  .sub {
+    color: #64748B; font-size: 10.5px; margin: 3px 0 0; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.16em;
+  }
   .muted { color: #64748B; font-size: 12px; margin: 2px 0 0; }
-  .rule { height: 4px; border-radius: 999px; background: linear-gradient(90deg,#4F46E5,#7C3AED,#0EA5E9); margin: 20px 0; }
+  .rule { height: 4px; border-radius: 999px; background: linear-gradient(90deg,#059669,#10B981,#C9A227); margin: 20px 0; }
   .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
   .meta .item {
     border: 1px solid #E2E8F0; border-radius: 10px; padding: 8px 12px; min-width: 150px;
@@ -126,10 +137,10 @@ export function buildReportHtml(opts: ReportOptions): string {
 </head>
 <body>
   <div class="brand">
-    <div class="logo">₺</div>
+    <div class="logo">${LOGO_SVG}</div>
     <div>
-      <h1>Alacak &amp; Borç Raporu</h1>
-      <p class="muted">Alacak ve Borç Takip Paneli</p>
+      <h1 class="name">${escapeHtml(BRAND.name)} <span class="suffix">${escapeHtml(BRAND.suffix)}</span></h1>
+      <p class="sub">Alacak &amp; Borç Raporu</p>
     </div>
   </div>
 
@@ -152,7 +163,7 @@ export function buildReportHtml(opts: ReportOptions): string {
     <div class="tile"><div class="k">Net Bakiye</div><div class="v" style="color:${
       net >= 0 ? "#059669" : "#DC2626"
     }">${escapeHtml(formatCurrency(net, displayCurrency))}</div></div>
-    <div class="tile"><div class="k">Tahsil / Ödenen</div><div class="v" style="color:#4F46E5">${escapeHtml(
+    <div class="tile"><div class="k">Tahsil / Ödenen</div><div class="v" style="color:#059669">${escapeHtml(
       formatCurrency(paid, displayCurrency),
     )}</div></div>
   </div>
@@ -179,7 +190,7 @@ export function buildReportHtml(opts: ReportOptions): string {
 
   <p class="foot">
     Toplam ${rows.length} kayıt · Tüm tutarlar ${escapeHtml(displayCurrency)} birimine sabit kur ile çevrilmiştir.
-    Bu rapor Alacak &amp; Borç Takip uygulaması ile oluşturulmuştur.
+    Bu rapor ${escapeHtml(BRAND.full)} takip paneli ile oluşturulmuştur.
   </p>
 </body>
 </html>`;

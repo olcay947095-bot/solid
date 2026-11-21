@@ -11,7 +11,7 @@ export type Currency = "TRY" | "USD" | "EUR";
 export type ThemeMode = "light" | "dark";
 
 /** Marka aksan paleti kimliği. */
-export type AccentId = "indigo" | "emerald" | "gold" | "cyan";
+export type AccentId = "green" | "indigo" | "emerald" | "gold" | "cyan";
 
 /** Hareketli duvar kağıdı varyantı. */
 export type WallpaperId = "aurora" | "mesh" | "starfield" | "grid" | "solid";

@@ -1,9 +1,11 @@
-import { Moon, Plus, Search, Settings, Sun, Wallet } from "lucide-react";
+import { Moon, Plus, Search, Settings, Sun } from "lucide-react";
 import type { Currency } from "@/types";
 import { useLedger } from "@/store/LedgerProvider";
 import { Button } from "@/components/ui/Button";
 import { Segmented } from "@/components/ui/Segmented";
 import { CloudStatusChip } from "@/components/backup/CloudStatusChip";
+import { Logo } from "@/components/brand/Logo";
+import { BRAND } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { VIEW_TITLES, type View } from "@/components/layout/nav";
 
@@ -89,17 +91,21 @@ export function TopHeader({
 
   return (
     <header className="no-print safe-top sticky top-0 z-30 border-b border-line bg-bg/70 backdrop-blur-xl">
-      {/* Mobil üst satır */}
-      <div className="flex items-center gap-3 px-4 pt-3 lg:hidden">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand text-white shadow-sm">
-          <Wallet className="h-[18px] w-[18px]" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-extrabold leading-tight text-ink">
-            {VIEW_TITLES[view] === "İşlemler" ? "Alacak & Borç" : VIEW_TITLES[view]}
+      {/* Mobil marka letterhead */}
+      <div className="flex flex-col items-center gap-1.5 px-4 pb-2.5 pt-3 lg:hidden">
+        <Logo size={34} />
+        <div className="text-center">
+          <p className="text-[13.5px] font-extrabold leading-none tracking-[0.01em] text-ink">
+            {BRAND.name} <span className="font-semibold text-brand">{BRAND.suffix}</span>
           </p>
-          <p className="truncate text-[11px] font-medium text-muted">Takip Paneli</p>
+          <span className="mx-auto mt-1.5 block h-[3px] w-9 rounded-full bg-gradient-to-r from-brand to-gold" />
         </div>
+      </div>
+      {/* Mobil bölüm başlığı + kontrol satırı */}
+      <div className="flex items-center gap-3 px-4 pb-1.5 lg:hidden">
+        <p className="min-w-0 flex-1 truncate text-[15px] font-extrabold leading-tight text-ink">
+          {VIEW_TITLES[view]}
+        </p>
         <Segmented
           size="sm"
           options={CURRENCY_OPTIONS}
@@ -109,7 +115,7 @@ export function TopHeader({
         <ThemeToggle />
       </div>
       {/* Mobil arama satırı */}
-      <div className="flex items-center gap-2.5 px-4 pb-3 pt-2.5 lg:hidden">
+      <div className="flex items-center gap-2.5 px-4 pb-3 pt-2 lg:hidden">
         <SearchInput value={search} onChange={onSearchChange} className="flex-1" />
         <CloudStatusChip iconOnly onClick={onOpenSettings} />
         <IconButton label="Ayarlar" onClick={onOpenSettings}>

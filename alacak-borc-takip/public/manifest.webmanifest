@@ -1,16 +1,16 @@
 {
-  "name": "Alacak & Borç Takip",
-  "short_name": "Alacak Borç",
-  "description": "Alacak ve borç takibi için modern finans paneli",
+  "name": "SERHAT ALTINDA Eczanesi",
+  "short_name": "Serhat Altında",
+  "description": "Eczane alacak, borç ve cari takip paneli",
   "lang": "tr",
   "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#F8FAFC",
-  "theme_color": "#4F46E5",
-  "categories": ["finance", "business", "productivity"],
+  "background_color": "#F6FAF8",
+  "theme_color": "#059669",
+  "categories": ["finance", "business", "productivity", "medical"],
   "icons": [
     {
       "src": "/favicon.svg",

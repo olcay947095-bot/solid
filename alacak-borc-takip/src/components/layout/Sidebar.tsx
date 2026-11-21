@@ -1,10 +1,12 @@
-import { ChevronLeft, RotateCcw, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { ChevronLeft, RotateCcw, TrendingDown, TrendingUp } from "lucide-react";
 import type { TxType } from "@/types";
 import { useLedger } from "@/store/LedgerProvider";
 import { useToast } from "@/store/ToastProvider";
 import { computeKpis } from "@/lib/ledger";
 import { formatCurrency } from "@/lib/format";
+import { BRAND } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/brand/Logo";
 import { NAV_ITEMS, isNavActive, type View } from "@/components/layout/nav";
 
 interface SidebarProps {
@@ -32,15 +34,16 @@ export function Sidebar({ collapsed, onToggle, view, ledgerType, onNavigate }: S
         collapsed ? "w-[76px]" : "w-[264px]",
       )}
     >
-      {/* Marka */}
-      <div className={cn("flex h-[68px] items-center gap-3 border-b border-line px-4", collapsed && "justify-center px-0")}>
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand text-white shadow-sm">
-          <Wallet className="h-5 w-5" />
-        </div>
+      {/* Marka letterhead */}
+      <div className={cn("flex flex-col items-center gap-2 border-b border-line px-4 py-3.5", collapsed && "gap-0 px-0 py-3")}>
+        <Logo size={collapsed ? 34 : 40} />
         {!collapsed ? (
-          <div className="min-w-0">
-            <p className="truncate text-sm font-extrabold leading-tight text-ink">Alacak & Borç</p>
-            <p className="truncate text-[11px] font-medium text-muted">Takip Paneli</p>
+          <div className="text-center">
+            <p className="text-[13px] font-extrabold leading-tight tracking-[0.01em] text-ink">
+              {BRAND.name}
+            </p>
+            <p className="text-[12px] font-semibold leading-tight text-brand">{BRAND.suffix}</p>
+            <span className="mx-auto mt-1.5 block h-[3px] w-8 rounded-full bg-gradient-to-r from-brand to-gold" />
           </div>
         ) : null}
       </div>
@@ -144,7 +147,7 @@ export function Sidebar({ collapsed, onToggle, view, ledgerType, onNavigate }: S
         type="button"
         onClick={onToggle}
         aria-label={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
-        className="absolute -right-3 top-[86px] flex h-6 w-6 items-center justify-center rounded-full border border-line bg-surface text-muted shadow-sm transition hover:text-ink"
+        className="absolute -right-3 top-[96px] flex h-6 w-6 items-center justify-center rounded-full border border-line bg-surface text-muted shadow-sm transition hover:text-ink"
       >
         <ChevronLeft className={cn("h-3.5 w-3.5 transition-transform duration-300", collapsed && "rotate-180")} />
       </button>

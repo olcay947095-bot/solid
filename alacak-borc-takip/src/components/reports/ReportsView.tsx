@@ -117,12 +117,12 @@ export function ReportsView() {
     }
   };
 
-  const handlePdf = () => {
+  const handlePdf = async () => {
     if (filtered.length === 0) {
       toast.warning("Raporlanacak kayıt yok", "Lütfen filtreleri değiştirin.");
       return;
     }
-    const outcome = exportReportPdf({
+    const outcome = await exportReportPdf({
       rows: filtered,
       scope,
       contact: activeContact,

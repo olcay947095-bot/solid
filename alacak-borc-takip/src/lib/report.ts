@@ -2,6 +2,8 @@ import type { Currency, LedgerRow } from "@/types";
 import { BRAND, STATUS_META } from "@/lib/constants";
 import { TX_TYPE_LABEL } from "@/lib/ledger";
 import { formatCurrency, formatDate, formatDateLong, todayISO } from "@/lib/format";
+import regularFontUrl from "@/assets/fonts/NotoSans-Regular.ttf?url";
+import boldFontUrl from "@/assets/fonts/NotoSans-Bold.ttf?url";
 
 export type ReportScope = "all" | "contact";
 
@@ -217,62 +219,260 @@ export function buildReportHtml(opts: ReportOptions): string {
 </html>`;
 }
 
-/** Raporun nasıl sunulduğunu belirtir. */
-export type PdfOutcome = "print" | "window" | "download" | "blocked";
+/* --- Gerçek PDF üretimi (jsPDF) ---------------------------------------------- */
 
-/** Gizli bir çerçevede raporu yazdırır — açılır pencere engeline takılmaz. */
-function printInFrame(html: string): boolean {
-  const frame = document.createElement("iframe");
-  frame.setAttribute("aria-hidden", "true");
-  frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;";
-  document.body.appendChild(frame);
+const RGB = {
+  brand: [5, 150, 105],
+  brandSoft: [247, 250, 249],
+  gold: [201, 162, 39],
+  ink: [15, 23, 42],
+  muted: [100, 116, 139],
+  faint: [148, 163, 184],
+  line: [226, 232, 240],
+  white: [255, 255, 255],
+  receivable: [5, 150, 105],
+  payable: [220, 38, 38],
+} as const;
 
-  try {
-    const win = frame.contentWindow;
-    if (!win) throw new Error("frame yok");
+const STATUS_RGB: Record<string, readonly [number, number, number]> = {
+  paid: [16, 185, 129],
+  overdue: [239, 68, 68],
+  partial: [245, 158, 11],
+  pending: [5, 150, 105],
+};
 
-    // Kısıtlı (opak kökenli) kum havuzunda document erişimi burada hata verir.
-    const doc = win.document;
-    doc.open();
-    doc.write(html);
-    doc.close();
-
-    window.setTimeout(() => {
-      try {
-        win.focus();
-        win.print();
-      } catch {
-        /* yazdırma engellendiyse çerçeve sessizce kaldırılır */
-      } finally {
-        window.setTimeout(() => frame.remove(), 1200);
-      }
-    }, 400);
-
-    return true;
-  } catch {
-    frame.remove();
-    return false;
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
   }
+  return btoa(binary);
 }
 
-/** Raporu Blob URL ile yeni sekmede açar. */
-function openInNewTab(html: string): boolean {
-  const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
-  const win = window.open(url, "_blank");
-  if (!win) {
-    URL.revokeObjectURL(url);
-    return false;
+let fontCache: Promise<{ regular: string; bold: string }> | null = null;
+
+/** Türkçe karakterleri destekleyen gömülü fontları (tek seferlik) yükler. */
+function loadFonts(): Promise<{ regular: string; bold: string }> {
+  if (!fontCache) {
+    fontCache = Promise.all([fetch(regularFontUrl), fetch(boldFontUrl)])
+      .then(async ([regular, bold]) => ({
+        regular: arrayBufferToBase64(await regular.arrayBuffer()),
+        bold: arrayBufferToBase64(await bold.arrayBuffer()),
+      }))
+      .catch((err) => {
+        fontCache = null;
+        throw err;
+      });
   }
-  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return fontCache;
+}
+
+/** Rapordan gerçek bir PDF (Blob) üretir. jsPDF/fontlar yalnızca burada yüklenir. */
+export async function buildReportPdf(opts: ReportOptions): Promise<Blob> {
+  const { rows, scope, contact, from, to, typeLabel, displayCurrency, statusLabel, categoryLabel, searchLabel } =
+    opts;
+
+  const [{ jsPDF }, { default: autoTable }, fonts] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+    loadFonts(),
+  ]);
+
+  let receivable = 0;
+  let payable = 0;
+  let paid = 0;
+  for (const row of rows) {
+    if (row.tx.type === "receivable") receivable += row.remaining;
+    else payable += row.remaining;
+    paid += row.paid;
+  }
+  const net = receivable - payable;
+
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  doc.addFileToVFS("NotoSans-Regular.ttf", fonts.regular);
+  doc.addFont("NotoSans-Regular.ttf", "NotoSans", "normal");
+  doc.addFileToVFS("NotoSans-Bold.ttf", fonts.bold);
+  doc.addFont("NotoSans-Bold.ttf", "NotoSans", "bold");
+
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 40;
+  const contentW = pageW - margin * 2;
+
+  // Başlık — logo kutusu + marka adı
+  const logo = 34;
+  doc.setFillColor(...RGB.brand);
+  doc.roundedRect(margin, margin, logo, logo, 9, 9, "F");
+  doc.setTextColor(...RGB.white);
+  doc.setFont("NotoSans", "bold");
+  doc.setFontSize(19);
+  doc.text("S", margin + logo / 2, margin + logo / 2, { align: "center", baseline: "middle" });
+
+  const nameX = margin + logo + 12;
+  doc.setFontSize(15);
+  doc.setTextColor(...RGB.ink);
+  doc.text(BRAND.name, nameX, margin + 13);
+  doc.setTextColor(...RGB.brand);
+  doc.text(` ${BRAND.suffix}`, nameX + doc.getTextWidth(BRAND.name), margin + 13);
+
+  doc.setFont("NotoSans", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...RGB.muted);
+  doc.setCharSpace(1.5);
+  doc.text("ALACAK & BORÇ RAPORU", nameX, margin + 26);
+  doc.setCharSpace(0);
+
+  // Başlık kuralı (marka yeşili → altın)
+  const ruleY = margin + logo + 8;
+  const goldW = 72;
+  doc.setFillColor(...RGB.brand);
+  doc.rect(margin, ruleY, contentW - goldW, 3, "F");
+  doc.setFillColor(...RGB.gold);
+  doc.rect(margin + contentW - goldW, ruleY, goldW, 3, "F");
+
+  // Kapsam / filtre özeti
+  const scopeLabel = scope === "contact" ? `Cari: ${contact ?? "-"}` : "Tüm Kayıtlar";
+  const metaParts = [`Kapsam: ${scopeLabel}`, `İşlem Türü: ${typeLabel}`];
+  if (statusLabel) metaParts.push(`Durum: ${statusLabel}`);
+  if (categoryLabel) metaParts.push(`Kategori: ${categoryLabel}`);
+  if (searchLabel) metaParts.push(`Arama: “${searchLabel}”`);
+  metaParts.push(`Vade Aralığı: ${dateRangeLabel(from, to)}`);
+  metaParts.push(`Oluşturma: ${formatDateLong(todayISO())}`);
+
+  doc.setFont("NotoSans", "normal");
+  doc.setFontSize(8.5);
+  const metaLines = doc.splitTextToSize(metaParts.join("     •     "), contentW - 24);
+  const metaTop = ruleY + 14;
+  const metaH = metaLines.length * 12 + 14;
+  doc.setDrawColor(...RGB.line);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(margin, metaTop, contentW, metaH, 6, 6, "FD");
+  doc.setTextColor(...RGB.muted);
+  doc.text(metaLines, margin + 12, metaTop + 15);
+
+  // Özet kutucukları
+  const tileGap = 10;
+  const tileW = (contentW - tileGap * 3) / 4;
+  const tileH = 44;
+  const tilesY = metaTop + metaH + 16;
+  const tiles: { k: string; v: string; c: readonly [number, number, number] }[] = [
+    { k: "Alacak (Kalan)", v: formatCurrency(receivable, displayCurrency), c: RGB.receivable },
+    { k: "Borç (Kalan)", v: formatCurrency(payable, displayCurrency), c: RGB.payable },
+    {
+      k: "Net Bakiye",
+      v: formatCurrency(net, displayCurrency),
+      c: net >= 0 ? RGB.receivable : RGB.payable,
+    },
+    { k: "Tahsil / Ödenen", v: formatCurrency(paid, displayCurrency), c: RGB.receivable },
+  ];
+  tiles.forEach((tile, i) => {
+    const x = margin + i * (tileW + tileGap);
+    doc.setDrawColor(...RGB.line);
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(x, tilesY, tileW, tileH, 6, 6, "FD");
+    doc.setFont("NotoSans", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...RGB.muted);
+    doc.text(tile.k, x + 10, tilesY + 16);
+    doc.setFont("NotoSans", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(...tile.c);
+    doc.text(tile.v, x + 10, tilesY + 32);
+  });
+
+  const footerText = `Toplam ${rows.length} kayıt · Tüm tutarlar ${displayCurrency} birimine Ayarlar'da tanımlı döviz kurlarıyla çevrilmiştir.`;
+  const drawFooter = () => {
+    doc.setFont("NotoSans", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...RGB.faint);
+    doc.text(footerText, margin, pageH - 30);
+    doc.text(`Bu rapor ${BRAND.full} takip paneli ile oluşturulmuştur.`, margin, pageH - 19);
+    doc.text(`Sayfa ${doc.getNumberOfPages()}`, pageW - margin, pageH - 19, { align: "right" });
+  };
+
+  const tableY = tilesY + tileH + 16;
+  if (rows.length === 0) {
+    doc.setFont("NotoSans", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...RGB.faint);
+    doc.text("Seçili kriterlere uygun kayıt bulunmuyor.", pageW / 2, tableY + 24, { align: "center" });
+    drawFooter();
+  } else {
+    autoTable(doc, {
+      startY: tableY,
+      head: [["Kişi / Firma", "Tür", "Kategori", "Vade", "Toplam", "Ödenen", "Kalan", "Durum"]],
+      body: rows.map((row) => [
+        row.tx.contactName,
+        TX_TYPE_LABEL[row.tx.type],
+        row.tx.category,
+        formatDate(row.nextDueDate),
+        formatCurrency(row.total, displayCurrency),
+        formatCurrency(row.paid, displayCurrency),
+        formatCurrency(row.remaining, displayCurrency),
+        STATUS_META[row.status].label,
+      ]),
+      theme: "striped",
+      styles: {
+        font: "NotoSans",
+        fontSize: 8,
+        cellPadding: { top: 5, right: 6, bottom: 5, left: 6 },
+        textColor: RGB.ink,
+        overflow: "linebreak",
+      },
+      headStyles: {
+        font: "NotoSans",
+        fontStyle: "bold",
+        fillColor: RGB.brand,
+        textColor: RGB.white,
+        fontSize: 7.5,
+        halign: "left",
+      },
+      alternateRowStyles: { fillColor: RGB.brandSoft },
+      columnStyles: {
+        4: { halign: "right" },
+        5: { halign: "right" },
+        6: { halign: "right", fontStyle: "bold" },
+      },
+      margin: { left: margin, right: margin, top: margin, bottom: 54 },
+      didParseCell: (data) => {
+        if (data.section !== "body") return;
+        const row = rows[data.row.index];
+        if (!row) return;
+        if (data.column.index === 1) {
+          data.cell.styles.textColor = row.tx.type === "receivable" ? RGB.receivable : RGB.payable;
+          data.cell.styles.fontStyle = "bold";
+        } else if (data.column.index === 7) {
+          data.cell.styles.textColor = STATUS_RGB[row.status] ?? RGB.ink;
+          data.cell.styles.fontStyle = "bold";
+        }
+      },
+      didDrawPage: drawFooter,
+    });
+  }
+
+  return doc.output("blob");
+}
+
+/* --- Sunum ---------------------------------------------------------------- */
+
+/** Raporun nasıl sunulduğunu belirtir. */
+export type PdfOutcome = "open" | "download" | "blocked";
+
+/** Raporu Blob URL ile yeni sekmede açar. */
+function openInNewTab(url: string): boolean {
+  const win = window.open(url, "_blank");
+  if (!win) return false;
   return true;
 }
 
-/** Raporu indirilebilir bir dosya olarak kaydeder (kısıtlı ortamlarda son çare). */
-function downloadHtml(html: string): void {
-  const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+/** Blob'u indirilebilir bir dosya olarak kaydeder. */
+function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${BRAND.full} - Alacak Borc Raporu.html`;
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -280,25 +480,43 @@ function downloadHtml(html: string): void {
 }
 
 /**
- * Raporu yazdırma/PDF görünümüyle sunar. Önce gizli çerçeve ile yazdırmayı dener
- * (açılır pencere engeline takılmaz); olmazsa yeni sekme; o da engellenirse dosya indirir.
+ * Raporu gerçek bir PDF olarak üretip yeni sekmede açar.
+ * Yeni sekme, kullanıcı hareketi korunması için senkron açılır; içerik async hazırlanır.
+ * Açılır pencere engellenirse PDF indirilir; üretim başarısız olursa HTML raporuna düşülür.
  */
-export function exportReportPdf(opts: ReportOptions): PdfOutcome {
-  const html = buildReportHtml(opts);
-
-  if (printInFrame(html)) return "print";
-
+export async function exportReportPdf(opts: ReportOptions): Promise<PdfOutcome> {
+  let win: Window | null = null;
   try {
-    if (openInNewTab(html)) return "window";
+    win = window.open("", "_blank");
   } catch {
-    /* yeni sekme engellendi → indirme yoluna düş */
+    win = null;
   }
 
   try {
-    downloadHtml(html);
+    const blob = await buildReportPdf(opts);
+    const url = URL.createObjectURL(blob);
+    if (win) {
+      win.location.href = url;
+      window.setTimeout(() => URL.revokeObjectURL(url), 120_000);
+      return "open";
+    }
+    downloadBlob(blob, `${BRAND.full} - Alacak Borc Raporu.pdf`);
     return "download";
-  } catch {
-    return "blocked";
+  } catch (err) {
+    console.error("PDF üretilemedi, HTML raporuna düşülüyor:", err);
+    if (win) win.close();
+    try {
+      const html = buildReportHtml(opts);
+      const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+      if (openInNewTab(url)) {
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+        return "open";
+      }
+      downloadBlob(new Blob([html], { type: "text/html;charset=utf-8" }), `${BRAND.full} - Alacak Borc Raporu.html`);
+      return "download";
+    } catch {
+      return "blocked";
+    }
   }
 }
 
@@ -309,29 +527,23 @@ export function pdfOutcomeToast(outcome: PdfOutcome): {
   description: string;
 } {
   switch (outcome) {
-    case "print":
+    case "open":
       return {
         tone: "success",
-        title: "Yazdırma penceresi açıldı",
-        description: "Hedef olarak “PDF olarak kaydet” seçeneğini kullanabilirsiniz.",
-      };
-    case "window":
-      return {
-        tone: "success",
-        title: "Rapor hazırlandı",
-        description: "Açılan sekmeden “PDF olarak kaydet” seçebilirsiniz.",
+        title: "Rapor açıldı",
+        description: "PDF yeni sekmede görüntüleniyor.",
       };
     case "download":
       return {
         tone: "info",
         title: "Rapor indirildi",
-        description: "Dosyayı açıp “Yazdır → PDF olarak kaydet” ile PDF'e çevirebilirsiniz.",
+        description: "PDF dosyası indirilenler klasörüne kaydedildi.",
       };
     default:
       return {
         tone: "error",
         title: "Rapor açılamadı",
-        description: "Tarayıcınız açılır pencere ve yazdırmayı engelliyor olabilir.",
+        description: "Tarayıcınız açılır pencereyi engelliyor olabilir.",
       };
   }
 }
